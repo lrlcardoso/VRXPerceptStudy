@@ -1,0 +1,651 @@
+// Developed by: Lucas Cardoso
+// First version: 03/May/2024
+// Latest release: 03/May/2024
+// Description: This script need to be attached to the GameObject with the hand model (right or left). The same GameObject also needs to have a Animator component attached (with a proper Animation created). 
+//              This script updates the "Blend" variable that controls the animation, so the pinch opens or closes. 
+//              The method through which this variable is going to be updated (control method) is defined by the experimenter, choosing between "Shoulder" or "Finger" in a list shown in the Experiment Manager GameObject.
+//              If "Finger" is selected (it means that finger tracking is going to be used), the script will connect to the "OnUpdatedHands" function to track the thumb and index finger tips, estimate the distance between them and update the "Blend" according to this distance.
+//              If "Shoulder" is selected (it means that the elevation and depression of the shoulder will be used), the script will follow the steps below:
+//                (i)   Connect to the Delsys base;
+//                (ii)  Read IMU from two sensors; and
+//                (iii) Calculate the position of the shoulder (elevation) based on the Kalman filter (using the matrices of the system identification built by the Matlab script "calibration.m").
+//              This part of the algorithm is based on the previous version "AnimateHandOnImput".
+//              All matrix manipulations use the code from the following link: https://visualstudiomagazine.com/Articles/2020/04/06/invert-matrix.aspx?Page=1
+//              The most updated program with the matrices manipulation is in the folder "Mult_matrixes_rev1".
+
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using System.IO;
+using System;
+using System.Text;
+using System.Net.Sockets;
+using System.Threading;
+using UnityEngine.XR.Hands;
+
+public class PinchControl : MonoBehaviour
+{
+    XRHandSubsystem m_HandSubsystem;
+    public Animator handAnimator; 
+    public GameObject pointerID;
+    private ExperimentManager GameSetUp; 
+    private float x = 0.0f;
+    private double accelX;
+    private double accelY;
+    private double accelZ;
+    string response = "";
+    private List<int> sensors = new List<int>();
+    //The following are used for TCP/IP connections
+    private TcpClient commandSocket = default!;
+    private TcpClient accSocket = default!;
+    private const int commandPort = 50040;  //server command port
+    private const int accPort = 50044;  //port for ACC data
+
+    //The following are streams and readers/writers for communication
+    private NetworkStream commandStream = default!;
+    private NetworkStream accStream = default!;
+    private StreamReader commandReader = default!;
+    private StreamWriter commandWriter = default!;
+
+    //The following are streams and readers/writers for communication
+    private List<double>[] accXDataList = new List<double>[16];
+    private List<double>[] accYDataList = new List<double>[16];
+    private List<double>[] accZDataList = new List<double>[16];
+    private List<double>[] gyrXDataList = new List<double>[16];
+    private List<double>[] gyrYDataList = new List<double>[16];
+    private List<double>[] gyrZDataList = new List<double>[16];
+
+    private bool connected = false; //true if connected to server
+    private bool running = false;   //true when acquiring data
+
+    //Server commands
+    private const string COMMAND_START = "START";
+    private const string COMMAND_STOP = "STOP";
+
+    //Threads for acquiring emg and acc data
+    private Thread accThread = default!;
+
+    //Folder were the matrices for the system identification are saved.
+    string folderPath = @"C:\Users\s4659771\Documents\JTI\DATA\";
+
+    //Initialize the matrices that identify the system
+    private double[][] A;
+    private double[][] H;
+    private double[][] Q;
+    private double[][] W;
+    private double[][] A_t; // A transpost
+    private double[][] H_t; // H transpost
+    private double[][] ECov_priori;
+    private double[][] x_priori;
+    private double[][] K;
+    private double[][] I;
+    private double[][] ECov_posteriori = new double[2][]
+    {
+        new double[] { 0.0f, 0.0f},
+        new double[] { 0.0f, 0.0f}
+    };
+    private double[][] x_hat_online = new double[2][]
+    {
+        new double[] { 0.0f},
+        new double[] { 0.0f}
+    };
+
+    private double[][] z = new double[16][]
+    {
+        new double[] { 0.0f},
+        new double[] { 0.0f},
+        new double[] { 0.0f},
+        new double[] { 0.0f},
+        new double[] { 0.0f},
+        new double[] { 0.0f},
+        new double[] { 0.0f},
+        new double[] { 0.0f},
+        new double[] { 0.0f},
+        new double[] { 0.0f},
+        new double[] { 0.0f},
+        new double[] { 0.0f},
+        new double[] { 0.0f},
+        new double[] { 0.0f},
+        new double[] { 0.0f},
+        new double[] { 0.0f}
+    };
+
+    private double[][] X = new double[2][]
+    {
+        new double[] { 0.0f},
+        new double[] { 0.0f}
+    };
+
+    void Start()
+    {
+        GameSetUp = pointerID.GetComponent<ExperimentManager>();
+        
+        if(GameSetUp.ControlMode.ToString()=="Shoulder")
+        {
+            string folder = folderPath + "Subj" + GameSetUp.ID + "/0_calibrationMatrices/";
+
+            try{
+                // READ ALL MATRIX FOR THE KALMAN FILTER
+                // read matrix A
+                A = MatLoad(folder+"A.txt",',');
+                // read matrix H
+                H = MatLoad(folder+"H.txt",',');
+                // read matrix Q
+                Q = MatLoad(folder+"Q.txt",',');
+                // read matrix W
+                W = MatLoad(folder+"W.txt",',');
+                // read matrix A_t (A transpost)
+                A_t = MatLoad(folder+"A_t.txt",',');
+                // read matrix H_t (H transpost)
+                H_t = MatLoad(folder+"H_t.txt",',');
+            }
+            catch (Exception)
+            {
+                Debug.LogError("The folder was not well specified.");
+                return;
+            }
+
+            //Create a identity matrix to be used in the last step of the system identification
+            I = MatEye(ECov_posteriori.Length,ECov_posteriori[0].Length);
+
+            //call function to do the set up with the Delsys base
+            setupDelsys();
+
+        }
+        else if(GameSetUp.ControlMode.ToString()=="None")
+        {
+            Debug.Log("No control mode was selected.");
+            Application.Quit();
+        }
+
+    }
+
+    void FixedUpdate()
+    {
+        // Update hand pose according to the current x value
+        handAnimator.SetFloat("Blend", x);
+
+        if(GameSetUp.ControlMode.ToString()=="Fingers"){
+
+            if (m_HandSubsystem != null && m_HandSubsystem.running)
+                return;
+            
+            var handSubsystems = new List<XRHandSubsystem>();
+            SubsystemManager.GetSubsystems(handSubsystems);
+
+            for (var i = 0; i < handSubsystems.Count; ++i)
+            {
+                var handSubsystem = handSubsystems[i];
+
+                if (handSubsystem.running)
+                {
+                    m_HandSubsystem = handSubsystem;
+                    break;
+                }
+            }
+
+            if (m_HandSubsystem != null)
+                m_HandSubsystem.updatedHands += OnUpdatedHands;
+
+        }
+        else if(GameSetUp.ControlMode.ToString()=="Shoulder")
+        {
+            // build vector z (feature vector) - same structure used in Matlab
+            z[0][0] =  accXDataList[sensors[0]-1][accXDataList[sensors[0]-1].Count - 1];
+            z[1][0] =  accYDataList[sensors[0]-1][accYDataList[sensors[0]-1].Count - 1]; 
+            z[2][0] =  accZDataList[sensors[0]-1][accZDataList[sensors[0]-1].Count - 1];
+            z[3][0] =  accXDataList[sensors[1]-1][accXDataList[sensors[1]-1].Count - 1];
+            z[4][0] =  accYDataList[sensors[1]-1][accYDataList[sensors[1]-1].Count - 1]; 
+            z[5][0] =  accZDataList[sensors[1]-1][accZDataList[sensors[1]-1].Count - 1];   
+            z[6][0] =  gyrXDataList[sensors[0]-1][gyrXDataList[sensors[0]-1].Count - 1];
+            z[7][0] =  gyrYDataList[sensors[0]-1][gyrYDataList[sensors[0]-1].Count - 1]; 
+            z[8][0] =  gyrZDataList[sensors[0]-1][gyrZDataList[sensors[0]-1].Count - 1];
+            z[9][0] =  gyrXDataList[sensors[1]-1][gyrXDataList[sensors[1]-1].Count - 1];
+            z[10][0] =  gyrYDataList[sensors[1]-1][gyrYDataList[sensors[1]-1].Count - 1]; 
+            z[11][0] =  gyrZDataList[sensors[1]-1][gyrZDataList[sensors[1]-1].Count - 1];
+            accelX = z[0][0];
+            accelY = z[1][0];
+            accelZ = z[2][0];
+            z[12][0] = Math.Atan2(-accelX, Math.Sqrt((accelY*accelY) + (accelZ*accelZ)))*(180/Math.PI);
+            z[13][0] = Math.Atan2(accelY, Math.Sqrt((accelX*accelX) + (accelZ*accelZ)))*(180/Math.PI);
+            accelX = z[3][0];
+            accelY = z[4][0];
+            accelZ = z[5][0];
+            z[14][0] = Math.Atan2(-accelX, Math.Sqrt((accelY*accelY) + (accelZ*accelZ)))*(180/Math.PI);
+            z[15][0] = Math.Atan2(accelY, Math.Sqrt((accelX*accelX) + (accelZ*accelZ)))*(180/Math.PI);
+
+            // update x value according to the shoulder position
+            X = shoulderElevation();
+            x = Convert.ToSingle(X[0][0]);
+
+            //Define the limits between 0 and 1
+            if(x<0)
+                x=0;
+            if(x>1)
+                x=1;
+        }
+    }
+
+    void OnUpdatedHands(XRHandSubsystem subsystem,
+        XRHandSubsystem.UpdateSuccessFlags updateSuccessFlags,
+        XRHandSubsystem.UpdateType updateType)
+    {
+        
+        var indexTip = subsystem.rightHand.GetJoint(XRHandJointIDUtility.FromIndex(XRHandJointID.IndexTip.ToIndex()));
+        var thumbTip = subsystem.rightHand.GetJoint(XRHandJointIDUtility.FromIndex(XRHandJointID.ThumbTip.ToIndex()));
+
+        indexTip.TryGetPose(out Pose poseIndex);
+        thumbTip.TryGetPose(out Pose poseThumb);
+
+        x = Vector3.Distance(poseIndex.position, poseThumb.position)/0.17f;
+    }
+
+    private double[][] shoulderElevation() 
+    {
+        x_priori = MatProduct(A,x_hat_online);
+        ECov_priori = MatSum(MatProduct(MatProduct(A,ECov_posteriori),A_t),W);
+        K = MatProduct(MatProduct(ECov_priori,H_t),MatInverse(MatSum(MatProduct(MatProduct(H,ECov_priori),H_t),Q)));
+        x_hat_online = MatSum(x_priori,MatProduct(K,MatSub(z,MatProduct(H,x_priori))));
+        ECov_posteriori = MatProduct(MatSub(I,MatProduct(K,H)),ECov_priori);
+
+        return x_hat_online;
+    }
+
+    private void setupDelsys() 
+    {
+        Debug.Log("Delsys setup is running...");
+        try
+        {
+            //Establish TCP/IP connection to server using URL entered
+            commandSocket = new TcpClient("localhost", commandPort);
+                
+            //Set up communication streams
+            commandStream = commandSocket.GetStream();
+            commandReader = new StreamReader(commandStream, Encoding.ASCII);
+            commandWriter = new StreamWriter(commandStream, Encoding.ASCII);
+            Debug.Log(commandReader.ReadLine());
+            commandReader.ReadLine();   //get extra line terminator
+            connected = true;
+        }
+        catch (Exception)
+        {
+            //connection failed, display error message
+            Debug.LogError("Could not connect.");
+            return;
+        }
+
+        string command = "UPSAMPLE OFF";
+        response = SendCommand(command);
+        Debug.Log("COMMAND: " + command);
+        Debug.Log("RESPONSE: " + response);
+
+        for (int i = 0; i < 16; i++)
+        {
+            command = "SENSOR " + (i+1) + " ACTIVE?";
+            response = SendCommand(command);
+            if(response == "YES")
+            {
+                sensors.Add(i+1);
+                Debug.Log("SENSOR " + (i+1) + " DETECTED");
+                command = "SENSOR " + (i+1) + " SETMODE 50";
+                response = SendCommand(command);
+                Debug.Log(response);
+            }
+        }
+
+        for (int i = 0; i < 16; i++)
+        {
+            accXDataList[i] = new List<double>();
+            accYDataList[i] = new List<double>();
+            accZDataList[i] = new List<double>();
+            gyrXDataList[i] = new List<double>();
+            gyrYDataList[i] = new List<double>();
+            gyrZDataList[i] = new List<double>();
+        }
+
+        //Establish data connections and creat streams
+        accSocket = new TcpClient("localhost", accPort);
+        accStream = accSocket.GetStream();
+
+        //Create data acquisition threads
+        accThread = new Thread(accWorker);
+        accThread.IsBackground = true;
+
+        //Indicate we are running and start up the acquisition threads
+        running = true;
+        accThread.Start();
+
+        //Send start command to server to stream data
+        response = SendCommand(COMMAND_START);
+        Debug.Log("COMMAND: " + COMMAND_START);
+        Debug.Log("RESPONSE: " + response);   
+
+        Thread.Sleep(1000); //wait 1s to ensure the buffer is full enough
+
+        Debug.Log("Delsys is ready to be use!");
+    }
+
+    void OnApplicationQuit()
+    {
+        if(GameSetUp.ControlMode.ToString()=="Shoulder")
+        {
+            response = SendCommand(COMMAND_STOP);
+            Debug.Log("COMMAND: " + COMMAND_STOP);
+            Debug.Log("RESPONSE: " + response);
+            commandSocket.Close();
+        }
+    } 
+
+    //Send a command to the server and gets the response
+    string SendCommand(string command)
+    {
+        string response = "";
+        //Check if connected
+        if (connected)
+        {
+            //Send the command
+            commandWriter.WriteLine(command);
+            commandWriter.WriteLine();  //terminate command
+            commandWriter.Flush();  //make sure command is sent immediately
+
+            //Read the response line and display    
+            response = commandReader.ReadLine();
+            commandReader.ReadLine();   //get extra line terminator
+        }
+        else
+            Debug.Log("Not connected.");
+        return response;    //return the response we got
+    }
+
+    // Thread for emg data acquisition
+    void accWorker()
+    {
+        accStream.ReadTimeout = 1000;    //set timeout
+
+        //Create a binary reader to read the data
+        BinaryReader reader = new BinaryReader(accStream);
+
+        while (running)
+        {
+            try
+            {
+                //Demultiplex the data for all sensors that were detected. Usually, it will be two.
+                for (int sn = 0; sn < 16; ++sn)
+                {
+                    if((sn==(sensors[0]-1)) || sn==(sensors[1]-1))
+                    {
+                        accXDataList[sn].Add(reader.ReadSingle()*9.81);
+                        accYDataList[sn].Add(reader.ReadSingle()*9.81);
+                        accZDataList[sn].Add(reader.ReadSingle()*9.81);
+                        gyrXDataList[sn].Add(reader.ReadSingle()*Math.PI/180);
+                        gyrYDataList[sn].Add(reader.ReadSingle()*Math.PI/180);
+                        gyrZDataList[sn].Add(reader.ReadSingle()*Math.PI/180);
+                        // the following three lines read the buffer, just to move the pointer. They are responsible to read the magnetometer, that is not available in the Avanty type sensors
+                        reader.ReadSingle();
+                        reader.ReadSingle();
+                        reader.ReadSingle();
+                    } else
+                    {
+                        for(int j = 0; j < 9; ++j)
+                        {
+                            reader.ReadSingle();
+                        }
+                    }
+                }
+            }
+            catch (IOException)
+            {
+                //Trace.WriteLine("Error in emg found");
+            }
+        }
+
+        reader.Close(); //close the reader. This also disconnects
+    }
+
+    //----- METHODS FOR MATRIX MANIPULATION ----- 
+        
+    // MatLoad: Read a .txt file, save in a matrix and return.
+    //          This is used to read the matrices of the system identification, 
+    //          built by the Matlab script, "calibration.m"
+    static double[][] MatLoad(string fn, char delimiter)
+    {  
+        var lines = File.ReadAllLines(fn);
+        double[][] result = new double[lines.Length][];
+        for (int i = 0; i < lines.Length; i++)
+        {
+            result[i] = Array.ConvertAll(lines[i].Split(delimiter), Double.Parse);
+        }
+        return result;
+    } 
+
+    // MatSum: Sum up two matrices.
+    static double[][] MatSum(double[][] matA,double[][] matB)
+    {  
+        int aRows = matA.Length;
+        int aCols = matA[0].Length;
+        int bRows = matB.Length;
+        int bCols = matB[0].Length;
+        if ((aCols != bCols) || (aRows != bRows))
+            throw new Exception("Non-conformable matrices");
+
+        double[][] result = MatCreate(aRows, bCols);
+        for (int i = 0; i < aRows; i++)
+        {
+            for (int j = 0; j < bCols; j++)
+            {
+                result[i][j] = matA[i][j]+matB[i][j];
+            }
+        }
+        return result;
+    }
+
+    // MatSub: Subtract two matrices.
+    static double[][] MatSub(double[][] matA,double[][] matB)
+    {  
+        int aRows = matA.Length;
+        int aCols = matA[0].Length;
+        int bRows = matB.Length;
+        int bCols = matB[0].Length;
+        if ((aCols != bCols) || (aRows != bRows))
+            throw new Exception("Non-conformable matrices");
+
+        double[][] result = MatCreate(aRows, bCols);
+        for (int i = 0; i < aRows; i++)
+        {
+            for (int j = 0; j < bCols; j++)
+            {
+                result[i][j] = matA[i][j]-matB[i][j];
+            }
+        }
+        return result;
+    }
+
+    // MatShow: Print the matrix.
+    static void MatShow(double[][] m, int dec, int wid)
+    {
+        for (int i = 0; i < m.Length; ++i)
+        {
+            for (int j = 0; j < m[0].Length; ++j)
+            {
+                double v = m[i][j];
+                if (Math.Abs(v) < 1.0e-15) v = 0.0;  // avoid "-0.00"
+                Console.Write(v.ToString("F" + dec).PadLeft(wid));
+            }
+            Console.WriteLine("");
+        }
+    }
+
+    // MatProduct: Multiply two matrices.
+    static double[][] MatProduct(double[][] matA,double[][] matB)
+    {
+        int aRows = matA.Length;
+        int aCols = matA[0].Length;
+        int bRows = matB.Length;
+        int bCols = matB[0].Length;
+        if (aCols != bRows)
+        throw new Exception("Non-conformable matrices");
+
+        double[][] result = MatCreate(aRows, bCols);
+
+        for (int i = 0; i < aRows; ++i) // each row of A
+            for (int j = 0; j < bCols; ++j) // each col of B
+                for (int k = 0; k < aCols; ++k) // could use bRows
+                    result[i][j] += matA[i][k] * matB[k][j];
+
+        return result;
+    }
+
+    // MatInverse: Invert the matrix.
+    static double[][] MatInverse(double[][] m)
+    {
+        // assumes determinant is not 0
+        // that is, the matrix does have an inverse
+        int n = m.Length;
+        double[][] result = MatCreate(n, n); // make a copy
+        for (int i = 0; i < n; ++i)
+            for (int j = 0; j < n; ++j)
+                result[i][j] = m[i][j];
+
+        double[][] lum; // combined lower & upper
+        int[] perm;  // out parameter
+        MatDecompose(m, out lum, out perm);  // ignore return
+
+        double[] b = new double[n];
+        for (int i = 0; i < n; ++i)
+        {
+            for (int j = 0; j < n; ++j)
+                if (i == perm[j])
+                    b[j] = 1.0;
+                else
+                    b[j] = 0.0;
+
+            double[] x = Reduce(lum, b); // 
+            for (int j = 0; j < n; ++j)
+                result[j][i] = x[j];
+        }
+        return result;
+    }
+
+    // MatDecompose: Decompose the matrix. This is called by MatInverse() function
+    static int MatDecompose(double[][] m, out double[][] lum, out int[] perm)
+    {
+        // Crout's LU decomposition for matrix determinant and inverse
+        // stores combined lower & upper in lum[][]
+        // stores row permuations into perm[]
+        // returns +1 or -1 according to even or odd number of row permutations
+        // lower gets dummy 1.0s on diagonal (0.0s above)
+        // upper gets lum values on diagonal (0.0s below)
+
+        int toggle = +1; // even (+1) or odd (-1) row permutatuions
+        int n = m.Length;
+
+        // make a copy of m[][] into result lu[][]
+        lum = MatCreate(n, n);
+        for (int i = 0; i < n; ++i)
+            for (int j = 0; j < n; ++j)
+                lum[i][j] = m[i][j];
+
+        // make perm[]
+        perm = new int[n];
+        for (int i = 0; i < n; ++i)
+            perm[i] = i;
+
+        for (int j = 0; j < n - 1; ++j) // process by column. note n-1 
+        {
+            double max = Math.Abs(lum[j][j]);
+            int piv = j;
+
+            for (int i = j + 1; i < n; ++i) // find pivot index
+            {
+                double xij = Math.Abs(lum[i][j]);
+                if (xij > max)
+                {
+                    max = xij;
+                    piv = i;
+                }
+            } // i
+
+            if (piv != j)
+            {
+                double[] tmp = lum[piv]; // swap rows j, piv
+                lum[piv] = lum[j];
+                lum[j] = tmp;
+
+                int t = perm[piv]; // swap perm elements
+                perm[piv] = perm[j];
+                perm[j] = t;
+
+                toggle = -toggle;
+            }
+
+            double xjj = lum[j][j];
+            if (xjj != 0.0)
+            {
+                for (int i = j + 1; i < n; ++i)
+                {
+                    double xij = lum[i][j] / xjj;
+                    lum[i][j] = xij;
+                    for (int k = j + 1; k < n; ++k)
+                        lum[i][k] -= xij * lum[j][k];
+                }
+            }
+
+        } // j
+
+        return toggle;  // for determinant
+    } // MatDecompose
+
+    // Reduce: Helper function called by MatInverse() function.
+    static double[] Reduce(double[][] luMatrix, double[] b) // helper
+    {
+        int n = luMatrix.Length;
+        double[] x = new double[n];
+        //b.CopyTo(x, 0);
+        for (int i = 0; i < n; ++i)
+            x[i] = b[i];
+
+        for (int i = 1; i < n; ++i)
+        {
+            double sum = x[i];
+            for (int j = 0; j < i; ++j)
+                sum -= luMatrix[i][j] * x[j];
+            x[i] = sum;
+        }
+
+        x[n - 1] /= luMatrix[n - 1][n - 1];
+        for (int i = n - 2; i >= 0; --i)
+        {
+            double sum = x[i];
+            for (int j = i + 1; j < n; ++j)
+                sum -= luMatrix[i][j] * x[j];
+            x[i] = sum / luMatrix[i][i];
+        }
+
+        return x;
+    } // Reduce
+
+    // MatCreate: set up any matrix.
+    static double[][] MatCreate(int rows, int cols)
+    {
+        double[][] result = new double[rows][];
+        for (int i = 0; i < rows; ++i)
+            result[i] = new double[cols];
+        return result;
+    }
+
+    // MatEye: create a identity matrix with dimensions rows x cols
+    static double[][] MatEye(int rows, int cols)
+    {
+        double[][] result = MatCreate(rows, cols);
+        for (int i = 0; i < rows; i++)
+        {
+            for (int j = 0; j < cols; j++)
+            {
+                if (i==j)
+                    result[i][j] = 1;
+            }
+        }
+        return result;
+    }
+
+}

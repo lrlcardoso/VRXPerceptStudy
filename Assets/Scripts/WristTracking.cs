@@ -1,3 +1,9 @@
+// Developed by: Lucas Cardoso
+// First version: 29/April/2024
+// Latest release: 29/April/2024
+// Description: This script need to be attached to the GameObject with the hand model (right or left). 
+//              This script tracks the user's hand and updates the avatar's hand continuously. 
+
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.XR.Hands;
