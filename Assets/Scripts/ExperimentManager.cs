@@ -23,6 +23,10 @@ public class ExperimentManager : MonoBehaviour
     // Collect participants ID and save data accordingly
     public string ID = "";
 
+    public Transform head;
+    public Transform origin;
+    public Transform target;
+
     void Start()
     {
         
@@ -31,5 +35,35 @@ public class ExperimentManager : MonoBehaviour
     void Update()
     {
         
+    }
+
+    public void Recenter()
+    {
+        Vector3 offset = head.position - origin.position;
+        offset.y = 0;
+        origin.position = target.position - offset;
+
+        Vector3 targetForward = target.forward;
+        targetForward.y = 0;
+        Vector3 cameraForward = head.forward;
+        cameraForward.y = 0;
+
+        float angle = Vector3.SignedAngle(cameraForward,targetForward, Vector3.up);
+        origin.RotateAround(head.position, Vector3.up, angle);
+        //XROrigin xrOrigin = GetComponent<XROrigin>();
+        //xrOrigin.MoveCameraToWorldLocation(target.position);
+        //xrOrigin.MatchOriginUpCameraForward(target.up, target.forward);
+    }
+    
+    public void ResetView()
+    {
+        Recenter();
+        //jump = true;
+        //stageIndex = stageIndex+1;
+    }
+
+    public void startTest()
+    {
+        //StartCCT = true;
     }
 }
