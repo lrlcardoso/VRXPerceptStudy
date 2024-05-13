@@ -23,12 +23,16 @@ public class ExperimentManager : MonoBehaviour
     // Collect participants ID and save data accordingly
     public string ID = "";
 
-    public Transform head;
-    public Transform origin;
-    public Transform target;
+    private Transform head;
+    private Transform origin;
+    private Transform target;
 
     void Start()
     {
+
+        head = GameObject.Find("Rig/Camera Offset/Main Camera").transform;
+        origin = GameObject.Find("Rig").transform;
+        target = GameObject.Find("Scene/Recenter Position").transform;
         
     }
 
@@ -50,16 +54,11 @@ public class ExperimentManager : MonoBehaviour
 
         float angle = Vector3.SignedAngle(cameraForward,targetForward, Vector3.up);
         origin.RotateAround(head.position, Vector3.up, angle);
-        //XROrigin xrOrigin = GetComponent<XROrigin>();
-        //xrOrigin.MoveCameraToWorldLocation(target.position);
-        //xrOrigin.MatchOriginUpCameraForward(target.up, target.forward);
     }
     
     public void ResetView()
     {
         Recenter();
-        //jump = true;
-        //stageIndex = stageIndex+1;
     }
 
     public void startTest()
