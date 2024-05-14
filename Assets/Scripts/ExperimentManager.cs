@@ -29,11 +29,9 @@ public class ExperimentManager : MonoBehaviour
 
     void Start()
     {
-
         head = GameObject.Find("Rig/Camera Offset/Main Camera").transform;
         origin = GameObject.Find("Rig").transform;
         target = GameObject.Find("Scene/Recenter Position").transform;
-        
     }
 
     void Update()
