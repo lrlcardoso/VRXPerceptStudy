@@ -9,8 +9,8 @@ public class TouchDetection : MonoBehaviour
     private GameObject pointerID;
     private HapticControl comSetup; 
     protected SerialPort comPort;
-    private byte[] thumb_touch = new byte[] { 0x54 };
-    private byte[] index_touch = new byte[] { 0x49 };
+    private byte[] thumb_touch = new byte[] { 0x31 };
+    private byte[] index_touch = new byte[] { 0x32 };
 
     // Start is called before the first frame update
     void Start()
@@ -35,7 +35,8 @@ public class TouchDetection : MonoBehaviour
         if(gameObject.name == "R_IndexTip")
         {
             comPort.Write(index_touch, 0, index_touch.Length);
-        } else
+        } 
+        else
         {
             comPort.Write(thumb_touch, 0, thumb_touch.Length);
         }
