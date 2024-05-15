@@ -9,12 +9,12 @@ using System.IO.Ports;
 public class HapticControl : MonoBehaviour
 {
     Thread thread;
-    bool isStopped = true;
+    bool isStopped = false;
     public SerialPort comPort;
     private bool portOpen=false;
     private byte[] data = new byte[] { 0x41, 0x41, 0x73, 0x73, 0x56, 0x01, 0x80, 0x78, 0x78, 0x45, 0x45 };
-    private string msg;
-    private bool msgReceived = false;
+    public string msg;
+    public bool msgReceived = false;
 
     // Start is called before the first frame update
     void Start()
@@ -33,12 +33,15 @@ public class HapticControl : MonoBehaviour
 
     public void Arduino()
     {
-        try
-        {
-            msg = comPort.ReadLine();
-            msgReceived = true;
+
+        while(!isStopped){
+            try
+            {
+                msg = comPort.ReadLine();
+                msgReceived = true;
+            }
+            catch (TimeoutException) { }
         }
-        catch (TimeoutException) { }
     }
 
     private bool SetupSerial(string port)
@@ -85,11 +88,13 @@ public class HapticControl : MonoBehaviour
 
     private void OnDestroy()  
     {  
-        isStopped = false;  
+        thread.Abort(); 
+        isStopped = true;  
     }
     private void OnApplicationQuit()  
     {  
-        isStopped = false;  
+        thread.Abort(); 
+        isStopped = true;  
     }
 }
 
