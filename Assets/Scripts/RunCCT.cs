@@ -8,6 +8,9 @@ using System.IO.Ports;
 public class RunCCT : MonoBehaviour
 {
 
+    private GameObject fixationMark;
+    private GameObject handRefPos;
+    private GameObject cctPose;
     private GameObject pointerID;
     private HapticControl hapticControl; 
     private byte[] thumbShoulder_CCT = new byte[] { 0x33 };
@@ -39,28 +42,42 @@ public class RunCCT : MonoBehaviour
 
         // Add congruent trials thumb-thumb
         AddTrials(trials, thumb, thumb, 0, nCongruentThumb);
-
         // Add congruent trials finger-finger
         AddTrials(trials, finger, finger, nCongruentThumb, nCongruentFinger);
-
         // Add incongruent trials thumb-finger
         AddTrials(trials, thumb, finger, 2 * nCongruentThumb, nIncongruentThumbFinger);
-
         // Add incongruent trials finger-thumb
         AddTrials(trials, finger, thumb, 3 * nCongruentThumb, nIncongruentFingerThumb);
-
         // Add noGo trials, thumb-N
         AddTrials(trials, thumb, noGo, nTrials, nThumbNoGo);
-
         // Add noGo trials, finger-N
         AddTrials(trials, finger, noGo, nTrials + nThumbNoGo, nFingerNoGo);
-
         // Shuffle the trials using Fisher-Yates algorithm
         Shuffle(trials, nTrials + nTrials_noGo);
-
         // Display the results
         PrintResults(trials);
 
+        cctPose = (GameObject)Resources.Load("Prefabs/Open_Pinch", typeof(GameObject));
+        handRefPos = Instantiate(cctPose, new Vector3(0.15f,0.96f,0.15f), Quaternion.Euler(new Vector3(311.11f,303.52f,15.66f)));
+        handRefPos.GetComponentInChildren<SkinnedMeshRenderer>().material = (Material)Resources.Load("Materials/Clear", typeof(Material));
+        
+        Transform indexTip = handRefPos.transform.Find("R_Wrist/R_IndexMetacarpal/R_IndexProximal/R_IndexIntermediate/R_IndexDistal/R_IndexTip");
+        Transform thumbTip = handRefPos.transform.Find("R_Wrist/R_ThumbMetacarpal/R_ThumbProximal/R_ThumbDistal/R_ThumbTip");
+
+        Vector3 fixationMarkPosition = CalculateMidpoint(indexTip.position, thumbTip.position);
+
+        fixationMark = (GameObject)Resources.Load("Prefabs/fixationMark", typeof(GameObject));
+        Instantiate(fixationMark, fixationMarkPosition, Quaternion.identity);
+
+    }
+
+    Vector3 CalculateMidpoint(Vector3 a, Vector3 b)
+    {
+        return new Vector3(
+            (a.x + b.x) / 2,
+            (a.y + b.y) / 2,
+            (a.z + b.z) / 2
+        );
     }
 
     static void AddTrials(char[,] trials, char value1, char value2, int start, int count)
@@ -108,5 +125,8 @@ public class RunCCT : MonoBehaviour
             Debug.Log(hapticControl.msg);
             hapticControl.msgReceived = false;
         }  
+
+
+        
     }
 }
