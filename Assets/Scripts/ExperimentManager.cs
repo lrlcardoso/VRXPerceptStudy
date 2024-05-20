@@ -36,6 +36,11 @@ public class ExperimentManager : MonoBehaviour
 
     void Update()
     {
+
+        if (Input.GetKeyDown("space"))
+        {
+            Recenter(); 
+        }
         
     }
 
