@@ -27,6 +27,12 @@ public class ExperimentManager : MonoBehaviour
     private Transform origin;
     private Transform target;
 
+    [Header("CCT Status")]
+    [Tooltip("")]
+    public string CongruentTrials;
+    public string IncongruentTrials;
+    public string NoGoTrials;
+
     void Start()
     {
         head = GameObject.Find("Rig/Camera Offset/Main Camera").transform;

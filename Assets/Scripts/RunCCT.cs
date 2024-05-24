@@ -20,14 +20,21 @@ public class RunCCT : MonoBehaviour
     float flickeringPeriod = 0.005f;
     float fixationTime = 1.2f;
     float delay = 0.1f;
+    int tooSlow = 1500000;
 
     // GameObject that communicates with Arduino (separate thread)
     private HapticControl hapticControl;
 
+    // 
+    private ExperimentManager experimentManager;
+
+    // 
+    private Transform userEyes;
+
     // GameObjects to load during the test
     private GameObject fixationMark;
     private GameObject handRefPos;
-    //private GameObject[] visualDistractor = new GameObject[2];
+    private GameObject stopwatch;
 
     // User's hand position (wrist)
     private Transform userHand; 
@@ -59,6 +66,9 @@ public class RunCCT : MonoBehaviour
     bool readingButton;
     int elapsedTime;
     Renderer renderer_fixationMark;
+    int congruent = 0;
+    int incongruent = 0;
+    int nogo = 0;
 
     // TrialData class to hold each trial's data
     public class TrialData
@@ -97,8 +107,12 @@ public class RunCCT : MonoBehaviour
         // Find the necessary GameObjects
         userHand = GameObject.Find("Rig/Camera Offset/RightHand").transform;
         hapticControl = GameObject.Find("Haptic Control").GetComponent<HapticControl>();
+        experimentManager = GameObject.Find("Experiment Manager").GetComponent<ExperimentManager>();
         fixationMark = Instantiate(Resources.Load<GameObject>("Prefabs/fixationMark"), Vector3.zero, Quaternion.identity);
         fixationMark.SetActive(false);
+        stopwatch = Instantiate(Resources.Load<GameObject>("Models/Stopwatch/stopwatch"), Vector3.zero, Quaternion.identity);
+        stopwatch.SetActive(false);
+        userEyes = GameObject.Find("Rig/Camera Offset/Main Camera").transform;
 
         // Create a 2D array to store the trials matrix that stores the combinations of incongruent, congruent and nogo trials 
         trials = new char[2, nTrials + nTrials_noGo];
@@ -125,6 +139,10 @@ public class RunCCT : MonoBehaviour
         // Display the results (for debugging)
         // PrintResults(trials);
 
+        experimentManager.CongruentTrials = "0 out of " + nTrials/2 + ".";
+        experimentManager.IncongruentTrials = "0 out of " + nTrials/2 + ".";
+        experimentManager.NoGoTrials = "0  out of " + nTrials_noGo + ".";
+
         // Start the coroutine to execute the CCT steps in sequence
         StartCoroutine(StepsCCT());
     }
@@ -133,7 +151,6 @@ public class RunCCT : MonoBehaviour
     {
         for (int trial = 0; trial < trials.GetLength(1); trial++){
 
-            // Step 1: show 
             yield return StartCoroutine(positionHands());
         
             yield return StartCoroutine(runTrial(trial));
@@ -162,6 +179,10 @@ public class RunCCT : MonoBehaviour
         fixationMark.transform.SetPositionAndRotation(fixationMarkPosition, Quaternion.identity);
         renderer_fixationMark = fixationMark.GetComponent<MeshRenderer>();
         renderer_fixationMark.sharedMaterial.color = Color.white;
+
+        Vector3 stopwatchPosition = fixationMarkPosition;
+        stopwatchPosition.y -= 0.015f;
+        stopwatch.transform.position = stopwatchPosition;
 
         timeInPosition = 0f;
         while (true)
@@ -278,7 +299,6 @@ public class RunCCT : MonoBehaviour
         
         foreach (var distractor in visualDistractor)
         {
-            //distractor.SetActive(false);
             Destroy(distractor);
         }
 
@@ -328,33 +348,51 @@ public class RunCCT : MonoBehaviour
 
     IEnumerator feedback(int trial)
     {
-        renderer_fixationMark.sharedMaterial.color = Color.green;
         
-        if(trials[1,trial] != 'N') // It is not a no-go trial
-        {       
-            if(trials[0,trial] != button)
-            {
-                renderer_fixationMark.sharedMaterial.color = Color.red;
-            }
-        }
-        else // It is a no-go trial - in this case, the participant needs to withhold the response, as a consequnce, response should be 'O'
+        if (elapsedTime<tooSlow)
         {
-            if(button!='O')
-            {
-                renderer_fixationMark.sharedMaterial.color = Color.red;
+            renderer_fixationMark.sharedMaterial.color = Color.green;
+            
+            if(trials[1,trial] != 'N') // It is not a no-go trial
+            {       
+                if(trials[0,trial] != button)
+                {
+                    renderer_fixationMark.sharedMaterial.color = Color.red;
+                }
             }
-        }
-        
-        fixationMark.SetActive(true);
-        float flickerStartTime = Time.time;
-        while (Time.time - flickerStartTime < 1.0f) // show feedback for 1s
-        {
-            fixationMark.SetActive(false);
-            yield return new WaitForSeconds(0.05f); 
+            else // It is a no-go trial - in this case, the participant needs to withhold the response, as a consequnce, response should be 'O'
+            {
+                if(button!='O')
+                {
+                    renderer_fixationMark.sharedMaterial.color = Color.red;
+                }
+            }
+            
             fixationMark.SetActive(true);
-            yield return new WaitForSeconds(0.05f);
+            float flickerStartTime = Time.time;
+            while (Time.time - flickerStartTime < 1.0f) // show feedback for 1s
+            {
+                fixationMark.SetActive(false);
+                yield return new WaitForSeconds(0.05f); 
+                fixationMark.SetActive(true);
+                yield return new WaitForSeconds(0.05f);
+            }
+            fixationMark.SetActive(false);
         }
-        fixationMark.SetActive(false);
+        else
+        {
+            stopwatch.transform.LookAt(userEyes);
+            // Get the current rotation of the object
+            Quaternion currentRotation = stopwatch.transform.rotation;
+            // Calculate the desired rotation by adding 90 degrees to the current rotation around the y-axis
+            Quaternion desiredRotation = Quaternion.Euler(currentRotation.eulerAngles + new Vector3(-90f, 0f, 0f));
+            // Apply the desired rotation to the object
+            stopwatch.transform.rotation = desiredRotation;
+            
+            stopwatch.SetActive(true);
+            yield return new WaitForSeconds(1.0f);
+            stopwatch.SetActive(false);
+        }
 
         yield return null;
     }
@@ -378,6 +416,26 @@ public class RunCCT : MonoBehaviour
         {
             sw.WriteLine(trialData.ToString());
         }
+
+        if(trials[1,trial] != 'N') // It is not a no-go trial
+        {       
+            if(trials[0,trial] != trials[1,trial])
+            {
+                incongruent++;
+            }
+            else
+            {
+                congruent++;
+            }
+        }
+        else // It is a no-go trial - in this case, the participant needs to withhold the response, as a consequnce, response should be 'O'
+        {
+            nogo++;
+        }
+
+        experimentManager.CongruentTrials = congruent + " out of " + nTrials/2 + ".";
+        experimentManager.IncongruentTrials = incongruent + " out of " + nTrials/2 + ".";
+        experimentManager.NoGoTrials = nogo + "  out of " + nTrials_noGo + ".";
 
         yield return null;
     }
