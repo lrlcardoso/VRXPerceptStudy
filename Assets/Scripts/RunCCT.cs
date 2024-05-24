@@ -87,6 +87,25 @@ public class RunCCT : MonoBehaviour
         }
     }
 
+    // Struct to store position and rotation
+    struct PositionRotationCombo
+    {
+        public Vector3 position;
+        public Vector3 rotationEuler;
+
+        public PositionRotationCombo(Vector3 pos, Vector3 rot)
+        {
+            position = pos;
+            rotationEuler = rot;
+        }
+    }
+
+    // Number of possibilities
+    private int numberOfPossibilities = 2;
+    // Number of elements in the vector
+    private int numberOfElements;
+
+
     void Start()
     {
         // Ensure the directory exists
@@ -113,6 +132,12 @@ public class RunCCT : MonoBehaviour
         stopwatch = Instantiate(Resources.Load<GameObject>("Models/Stopwatch/stopwatch"), Vector3.zero, Quaternion.identity);
         stopwatch.SetActive(false);
         userEyes = GameObject.Find("Rig/Camera Offset/Main Camera").transform;
+
+        // Array to store position and rotation combinations
+        PositionRotationCombo[] positionRotationArray = new PositionRotationCombo[numberOfPossibilities];
+        // Initialize the array with desired combinations of position and rotation
+        positionRotationArray[0] = new PositionRotationCombo(new Vector3(0.25f, 1.02f, 0.30f), new Vector3(307.77f, 302.50f, 27.84f));
+        positionRotationArray[1] = new PositionRotationCombo(new Vector3 (-0.05f, 1.03f, 0.33f), new Vector3(306.80f, 264.32f, 28.40f));
 
         // Create a 2D array to store the trials matrix that stores the combinations of incongruent, congruent and nogo trials 
         trials = new char[2, nTrials + nTrials_noGo];
@@ -143,15 +168,25 @@ public class RunCCT : MonoBehaviour
         experimentManager.IncongruentTrials = "0 out of " + nTrials/2 + ".";
         experimentManager.NoGoTrials = "0  out of " + nTrials_noGo + ".";
 
+        numberOfElements = nTrials + nTrials_noGo;
+        List<int> vector = HandPosVec(numberOfPossibilities, numberOfElements);
+        ShuffleVector(vector);
+
+        // Display the shuffled vector in the console
+        //foreach (int item in vector)
+        //{
+        //    Debug.Log(item);
+        //}
+
         // Start the coroutine to execute the CCT steps in sequence
-        StartCoroutine(StepsCCT());
+        StartCoroutine(StepsCCT(positionRotationArray, vector));
     }
 
-    IEnumerator StepsCCT()
+    IEnumerator StepsCCT(PositionRotationCombo[] positionRotationArray, List<int> vector)
     {
         for (int trial = 0; trial < trials.GetLength(1); trial++){
 
-            yield return StartCoroutine(positionHands());
+            yield return StartCoroutine(positionHands(trial, positionRotationArray, vector));
         
             yield return StartCoroutine(runTrial(trial));
 
@@ -165,9 +200,9 @@ public class RunCCT : MonoBehaviour
         Debug.Log("CCT successfully completed!");
     }
 
-    IEnumerator positionHands()
+    IEnumerator positionHands(int trial, PositionRotationCombo[] positionRotationArray, List<int> vector)
     {
-        handRefPos = Instantiate(Resources.Load<GameObject>("Prefabs/Open_Pinch"), new Vector3(0.15f,0.96f,0.15f), Quaternion.Euler(new Vector3(311.11f,303.52f,15.66f)));
+        handRefPos = Instantiate(Resources.Load<GameObject>("Prefabs/Open_Pinch"), positionRotationArray[vector[trial]].position, Quaternion.Euler(positionRotationArray[vector[trial]].rotationEuler));
         handRefPos.GetComponentInChildren<SkinnedMeshRenderer>().material = (Material)Resources.Load("Materials/Clear", typeof(Material));
 
         indexTip_handRefPos = handRefPos.transform.Find("R_Wrist/R_IndexMetacarpal/R_IndexProximal/R_IndexIntermediate/R_IndexDistal/R_IndexTip");
@@ -381,17 +416,34 @@ public class RunCCT : MonoBehaviour
         }
         else
         {
-            stopwatch.transform.LookAt(userEyes);
-            // Get the current rotation of the object
-            Quaternion currentRotation = stopwatch.transform.rotation;
-            // Calculate the desired rotation by adding 90 degrees to the current rotation around the y-axis
-            Quaternion desiredRotation = Quaternion.Euler(currentRotation.eulerAngles + new Vector3(-90f, 0f, 0f));
-            // Apply the desired rotation to the object
-            stopwatch.transform.rotation = desiredRotation;
-            
-            stopwatch.SetActive(true);
-            yield return new WaitForSeconds(1.0f);
-            stopwatch.SetActive(false);
+            if(trials[1,trial] != 'N') // It is not a no-go trial
+            {       
+                stopwatch.transform.LookAt(userEyes);
+                // Get the current rotation of the object
+                Quaternion currentRotation = stopwatch.transform.rotation;
+                // Calculate the desired rotation by adding 90 degrees to the current rotation around the y-axis
+                Quaternion desiredRotation = Quaternion.Euler(currentRotation.eulerAngles + new Vector3(-90f, 0f, 0f));
+                // Apply the desired rotation to the object
+                stopwatch.transform.rotation = desiredRotation;
+                
+                stopwatch.SetActive(true);
+                yield return new WaitForSeconds(1.0f);
+                stopwatch.SetActive(false);
+            }
+            else
+            {
+                renderer_fixationMark.sharedMaterial.color = Color.green;
+                fixationMark.SetActive(true);
+                float flickerStartTime = Time.time;
+                while (Time.time - flickerStartTime < 1.0f) // show feedback for 1s
+                {
+                    fixationMark.SetActive(false);
+                    yield return new WaitForSeconds(0.05f); 
+                    fixationMark.SetActive(true);
+                    yield return new WaitForSeconds(0.05f);
+                }
+                fixationMark.SetActive(false);
+            }
         }
 
         yield return null;
@@ -477,6 +529,45 @@ public class RunCCT : MonoBehaviour
         for (int i = 0; i < results.GetLength(1); i++)
         {
             Debug.Log($"{results[0, i]} {results[1, i]}");
+        }
+    }
+
+    List<int> HandPosVec(int numberOfPossibilities, int totalLength)
+    {
+        List<int> vector = new List<int>();
+        int repetition = totalLength / numberOfPossibilities;
+
+        for (int i = 0; i < numberOfPossibilities; i++)
+        {
+            for (int j = 0; j < repetition; j++)
+            {
+                vector.Add(i);
+            }
+        }
+
+        return vector;
+    }
+
+    void ShuffleVector(List<int> vector)
+    {
+        for (int i = 0; i < vector.Count; i++)
+        {
+            int temp = vector[i];
+            int randomIndex = UnityEngine.Random.Range(i, vector.Count);
+            vector[i] = vector[randomIndex];
+            vector[randomIndex] = temp;
+        }
+
+        // Ensure no consecutive repeats
+        for (int i = 0; i < vector.Count - 1; i++)
+        {
+            if (vector[i] == vector[i + 1])
+            {
+                int temp = vector[i];
+                int randomIndex = UnityEngine.Random.Range(i + 1, vector.Count);
+                vector[i] = vector[randomIndex];
+                vector[randomIndex] = temp;
+            }
         }
     }
 
