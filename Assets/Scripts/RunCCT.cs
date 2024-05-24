@@ -321,13 +321,13 @@ public class RunCCT : MonoBehaviour
         {
             foreach (var distractor in visualDistractor)
             {
-                distractor.SetActive(false);
+                distractor.SetActive(true);
             }
             yield return new WaitForSeconds(flickeringPeriod); 
 
             foreach (var distractor in visualDistractor)
             {
-                distractor.SetActive(true);
+                distractor.SetActive(false);
             }
             yield return new WaitForSeconds(flickeringPeriod);
         }
