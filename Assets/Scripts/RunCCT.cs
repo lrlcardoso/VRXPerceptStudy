@@ -14,12 +14,12 @@ public class RunCCT : MonoBehaviour
     // Parameters for the CCT:
     string test = "pre"; // Can be "pre" or "post"
     string testType = "H2S"; // Can be "H2H" (Hand-to-Hand) or "H2S" (Hand-to-Shoulder)
-    int nTrials = 4; // Total number of trials, congruant + incongruent          
+    int nTrials = 2; // Total number of trials, congruant + incongruent          
     int nTrials_noGo = 2; // Number of no go trials
-    float visualDistractorDuration = 0.2f;
+    float visualDistractorDuration = 1.0f;
     float flickeringPeriod = 0.005f;
     float fixationTime = 1.2f;
-    float delay = 0.1f;
+    float delay = 0.1f; // In seconds
     int tooSlow = 1500000;
 
     // GameObject that communicates with Arduino (separate thread)
@@ -32,6 +32,7 @@ public class RunCCT : MonoBehaviour
     private Transform userEyes;
 
     // GameObjects to load during the test
+    private GameObject curtain;
     private GameObject fixationMark;
     private GameObject handRefPos;
     private GameObject stopwatch;
@@ -124,6 +125,7 @@ public class RunCCT : MonoBehaviour
         }
 
         // Find the necessary GameObjects
+        curtain = Instantiate(Resources.Load<GameObject>("Prefabs/Canvas"), Vector3.zero, Quaternion.identity);
         userHand = GameObject.Find("Rig/Camera Offset/RightHand").transform;
         hapticControl = GameObject.Find("Haptic Control").GetComponent<HapticControl>();
         experimentManager = GameObject.Find("Experiment Manager").GetComponent<ExperimentManager>();
@@ -178,12 +180,27 @@ public class RunCCT : MonoBehaviour
         //    Debug.Log(item);
         //}
 
+        curtain.SetActive(true);
+        
         // Start the coroutine to execute the CCT steps in sequence
         StartCoroutine(StepsCCT(positionRotationArray, vector));
     }
 
+    IEnumerator StartTest()
+    {
+        // Loop until the spacebar is pressed
+        while (!Input.GetKeyDown(KeyCode.Space))
+        {
+            // Wait for the next frame
+            yield return null;
+        }
+    }
+
     IEnumerator StepsCCT(PositionRotationCombo[] positionRotationArray, List<int> vector)
     {
+
+        yield return StartCoroutine(StartTest());
+
         for (int trial = 0; trial < trials.GetLength(1); trial++){
 
             yield return StartCoroutine(positionHands(trial, positionRotationArray, vector));
@@ -220,6 +237,7 @@ public class RunCCT : MonoBehaviour
         stopwatch.transform.position = stopwatchPosition;
 
         timeInPosition = 0f;
+        /*
         while (true)
         {
         // Check if the player is within the detection radius of the target position
@@ -242,7 +260,9 @@ public class RunCCT : MonoBehaviour
                 timeInPosition = 0f;
             }
             yield return null;
-        }  
+        } 
+        */
+        yield return new WaitForSeconds(2.0f); 
     }
 
     IEnumerator runTrial(int trial)
@@ -303,9 +323,9 @@ public class RunCCT : MonoBehaviour
 
         yield return new WaitForSeconds(fixationTime);
 
-        hapticControl.comPort.Write(motor, 0, motor.Length);
+        hapticControl.comPort.Write(thumbShoulder_CCT, 0, thumbShoulder_CCT.Length);
 
-        //yield return new WaitForSeconds(delay);
+        yield return new WaitForSeconds(delay);
         
         fixationMark.SetActive(false);
         
@@ -319,23 +339,16 @@ public class RunCCT : MonoBehaviour
 
         while (Time.time - flickerStartTime < visualDistractorDuration)
         {
-            foreach (var distractor in visualDistractor)
-            {
-                distractor.SetActive(false);
-            }
-            yield return new WaitForSeconds(flickeringPeriod); 
-
-            foreach (var distractor in visualDistractor)
-            {
-                distractor.SetActive(true);
-            }
-            yield return new WaitForSeconds(flickeringPeriod);
+            curtain.SetActive(false);
+            yield return null;
         }
         
         foreach (var distractor in visualDistractor)
         {
             Destroy(distractor);
         }
+
+        curtain.SetActive(true);
 
         yield return null;
     }
