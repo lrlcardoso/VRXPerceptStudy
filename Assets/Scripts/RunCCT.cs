@@ -11,16 +11,43 @@ public class RunCCT : MonoBehaviour
     private string filePath = @"C:\Users\s4659771\Documents\";
     private string fileName = "test.csv";
 
-    // Parameters for the CCT:
+    // Parameters for the CCT ----------------------------------------------------------
     string test = "pre"; // Can be "pre" or "post"
     string testType = "H2S"; // Can be "H2H" (Hand-to-Hand) or "H2S" (Hand-to-Shoulder)
-    int nTrials = 2; // Total number of trials, congruant + incongruent          
+    int nTrials = 10; // Total number of trials, congruant + incongruent          
     int nTrials_noGo = 2; // Number of no go trials
-    float visualDistractorDuration = 1.0f;
-    float flickeringPeriod = 0.005f;
+    
+    // Both, activeFrames and inactiveFrames (below) are used to control the flickering frequency. 
+    // It is counted in multiples of the refresh period (around 14ms, for 72Hz). So, if both are 
+    // equal to 1, it means that they will alternate as "active, inactive, active, ...", thus,
+    // around 36Hz.  
+    int activeFrames = 1; 
+    int inactiveFrames = 1;
+    
+    // The variable flickeringPeriodFrames controls the period that the visual distractor will  
+    // flicker, again, in multiples of 14ms. For example, if flickeringPeriodFrames = 14, then
+    // the flickering period is 14*14ms ~ 196ms.
+    int flickeringPeriodFrames = 14;
     float fixationTime = 1.2f;
-    float delay = 0.1f; // In seconds
+
+    // The variable delayFrames controls the desirable delay between the visual distractor (that 
+    // comes first), and the vibration (that comes after). For example, if delayFrames = 7, then
+    // the delay is 7*14ms ~ 98ms.
+    int delayFrames = 7;
+
+    // The variable systemDelayFrames SHOULD NOT BE CHANGED. The systemDelayFrames = 3 was 
+    // determined by experimental procedure (using the oscilloscope). This is necessary to ensure
+    // that the motor will be activated always in the same frame as the visual distractor appears 
+    // (assuming delayFrames = 0).
+    int systemDelayFrames = 3;
+
+    // The variable tooSlow is used to provide feedback to the user if the reaction time exceeds 
+    // it. It is also defined in the Arduino firmware, but with a greater value. For example, if 
+    // in the Arudino it is defined as tooSlow = 2 seconds, here it is defined as 1.5 seconds, 
+    // meaning that the loop in the Arduino firmware will stop after 2 seconds, but "too slow" 
+    // feedback will be shown for any reaction slower than 1.5 seconds.   
     int tooSlow = 1500000;
+    //----------------------------------------------------------------------------------
 
     // GameObject that communicates with Arduino (separate thread)
     private HapticControl hapticControl;
@@ -47,6 +74,7 @@ public class RunCCT : MonoBehaviour
     private byte[] indexHand_CCT = new byte[] { 0x36 };
     
     // Other variables
+    bool sentMsgFlag = false;
     private char[,] trials;
     const char thumb = 'T';
     const char index = 'I';
@@ -105,7 +133,6 @@ public class RunCCT : MonoBehaviour
     private int numberOfPossibilities = 2;
     // Number of elements in the vector
     private int numberOfElements;
-
 
     void Start()
     {
@@ -186,19 +213,8 @@ public class RunCCT : MonoBehaviour
         StartCoroutine(StepsCCT(positionRotationArray, vector));
     }
 
-    IEnumerator StartTest()
-    {
-        // Loop until the spacebar is pressed
-        while (!Input.GetKeyDown(KeyCode.Space))
-        {
-            // Wait for the next frame
-            yield return null;
-        }
-    }
-
     IEnumerator StepsCCT(PositionRotationCombo[] positionRotationArray, List<int> vector)
     {
-
         yield return StartCoroutine(StartTest());
 
         for (int trial = 0; trial < trials.GetLength(1); trial++){
@@ -215,6 +231,16 @@ public class RunCCT : MonoBehaviour
         }
 
         Debug.Log("CCT successfully completed!");
+    }
+
+    IEnumerator StartTest()
+    {
+        // Loop until the spacebar is pressed
+        while (!Input.GetKeyDown(KeyCode.Space))
+        {
+            // Wait for the next frame
+            yield return null;
+        }
     }
 
     IEnumerator positionHands(int trial, PositionRotationCombo[] positionRotationArray, List<int> vector)
@@ -237,6 +263,8 @@ public class RunCCT : MonoBehaviour
         stopwatch.transform.position = stopwatchPosition;
 
         timeInPosition = 0f;
+        
+        // The next piece of code was commented because we do not need to waint until the participant's hand is in the right position during the time delay estimation
         /*
         while (true)
         {
@@ -267,6 +295,7 @@ public class RunCCT : MonoBehaviour
 
     IEnumerator runTrial(int trial)
     {
+        // Get the positions in with the visual distractors will appear
         indexTip = userHand.transform.Find("R_Wrist/R_IndexMetacarpal/R_IndexProximal/R_IndexIntermediate/R_IndexDistal/R_IndexTip");
         thumbTip = userHand.transform.Find("R_Wrist/R_ThumbMetacarpal/R_ThumbProximal/R_ThumbDistal/R_ThumbTip");
 
@@ -319,35 +348,62 @@ public class RunCCT : MonoBehaviour
                 break;
         }
 
-        renderer_fixationMark.sharedMaterial.color = Color.green;
-
-        yield return new WaitForSeconds(fixationTime);
-
-        hapticControl.comPort.Write(thumbShoulder_CCT, 0, thumbShoulder_CCT.Length);
-
-        yield return new WaitForSeconds(delay);
-        
-        fixationMark.SetActive(false);
-        
+        // Create the visual distractor object(s)
         GameObject[] visualDistractor = new GameObject[distractorCount];
         for (int ii = 0; ii < visualDistractor.Length; ii++)
         {
             visualDistractor[ii] = Instantiate(Resources.Load<GameObject>("Prefabs/visualDistractor"), position[ii], Quaternion.identity); 
         }
 
-        float flickerStartTime = Time.time;
+        // Change the colour of the fixation mark to green
+        renderer_fixationMark.sharedMaterial.color = Color.green;
 
-        while (Time.time - flickerStartTime < visualDistractorDuration)
-        {
-            curtain.SetActive(false);
-            yield return null;
-        }
+        // Wait for the fixationTime
+        yield return new WaitForSeconds(fixationTime);
         
+        // Turn off the fixation mark
+        fixationMark.SetActive(false);
+
+        // Start the loop to show the visual distractor and vibrate the motor
+        int frameCounter = 0;
+        while (frameCounter < flickeringPeriodFrames)
+        {
+            // Send the command to Arduino in frame (systemDelayFrames + delayFrames), to ensure the desired delay
+            if ((frameCounter == (systemDelayFrames + delayFrames)) && !sentMsgFlag)
+            {
+                hapticControl.comPort.Write(thumbShoulder_CCT, 0, thumbShoulder_CCT.Length);
+                sentMsgFlag = true;
+            }
+
+            // Flicker the visual distractor
+            if (frameCounter % (activeFrames + inactiveFrames) < activeFrames)
+            {
+                foreach (var distractor in visualDistractor)
+                {
+                    curtain.SetActive(false);
+                }
+            }
+            else
+            {
+                foreach (var distractor in visualDistractor)
+                {
+                    curtain.SetActive(true);
+                }
+            }
+            yield return null;
+            frameCounter++;
+        }
+
+        // Reset the flag after finishing the flickering sequence
+        sentMsgFlag = false;
+    
+        // Destroy the visual distractor(s)
         foreach (var distractor in visualDistractor)
         {
             Destroy(distractor);
         }
 
+        // Destroy the curtain
         curtain.SetActive(true);
 
         yield return null;
@@ -582,22 +638,5 @@ public class RunCCT : MonoBehaviour
                 vector[randomIndex] = temp;
             }
         }
-    }
-
-    // Update is called once per frame
-    //void Update()
-    //{
-        //if (Input.GetKeyDown("space"))
-        //{
-        //    hapticControl.comPort.Write(thumbShoulder_CCT, 0, thumbShoulder_CCT.Length);
-            
-        //}
-
-        //if (hapticControl.msgReceived)
-        //{
-        //    Debug.Log(hapticControl.msg);
-        //    hapticControl.msgReceived = false;
-        //}
-        
-    //}
+    }    
 }
