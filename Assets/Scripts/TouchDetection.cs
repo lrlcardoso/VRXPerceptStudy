@@ -11,6 +11,9 @@ public class TouchDetection : MonoBehaviour
     protected SerialPort comPort;
     private byte[] thumb_touch = new byte[] { 0x31 };
     private byte[] index_touch = new byte[] { 0x32 };
+    byte[] msg;
+    public bool indexON = false;
+    public bool thumbON = false;
 
     // Start is called before the first frame update
     void Start()
@@ -22,23 +25,34 @@ public class TouchDetection : MonoBehaviour
 
     void OnTriggerEnter(Collider other)
     {
-        HapticControl();
+        if(gameObject.name == "R_IndexTip" | gameObject.name == "R_ThumbTip")
+        {
+            HapticControl(gameObject.name);
+        }
     }
 
     void OnTriggerExit(Collider other)
     {
-        HapticControl();
+        if(gameObject.name == "R_IndexTip" | gameObject.name == "R_ThumbTip")
+        {
+            HapticControl(gameObject.name);
+        }
     }
 
-    void HapticControl(){
+    public void HapticControl(string whatTouched){
 
-        if(gameObject.name == "R_IndexTip")
+        switch (whatTouched)
         {
-            comPort.Write(index_touch, 0, index_touch.Length);
-        } 
-        else
-        {
-            comPort.Write(thumb_touch, 0, thumb_touch.Length);
+            case "R_IndexTip":
+                msg = index_touch;
+                indexON = !indexON;
+                break;
+            case "R_ThumbTip":
+                msg = thumb_touch;
+                thumbON = !thumbON;
+                break;
         }
-    }   
+        comPort.Write(msg, 0, msg.Length);
+    }  
+
 }

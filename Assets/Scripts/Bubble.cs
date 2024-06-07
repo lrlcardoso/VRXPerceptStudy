@@ -1,64 +1,59 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Events;
+using System.IO;
+using System.IO.Ports;
 
-  /**
- * A pinchable ball for the ball pinch game.
- * Popping triggers an effect and lets the game know.
- */
-  [RequireComponent(typeof(AudioSource))]
-  public class Bubble : MonoBehaviour {
-
-    public float floatSpeed = 1.0f;
-    public float maxLifetime = 10.0f;
-
+[RequireComponent(typeof(AudioSource))]
+public class Bubble : MonoBehaviour 
+{
     AudioSource audioSource;
-    bool popped = false;
+    private TouchDetection touchDetection;
 
-    void Awake() {
-      audioSource = GetComponent<AudioSource>();
-    }
-
-    public void Pop() {
-
-      popped = true;
-
-      audioSource.Play();
-      StartCoroutine(DestroyAfterAudioPlays());
-    }
-
-    IEnumerator DestroyAfterAudioPlays() {
-      while (audioSource.isPlaying) {
-        yield return null;
-      }
-
-      Destroy(gameObject);
-    }
-
-    private void Start()
+    void Awake() 
     {
-        // Destroy the bubble after a certain time to prevent memory leaks
-        //Destroy(gameObject, maxLifetime);
-    }
-
-    private void Update()
-    {
-        // Make the bubble float upwards
-        //transform.Translate(Vector3.up * floatSpeed * Time.deltaTime);
+        audioSource = GetComponent<AudioSource>();
     }
 
     private void OnTriggerEnter(Collider other)
     {
         // Check if the collider belongs to the player's hand or pointer
-        if (other.name == "R_IndexTip")
+        if (other.name == "R_IndexTip" | other.name == "R_ThumbTip")
         {
-            Pop();
+          TouchDetection touchDetector = other.GetComponent<TouchDetection>();
+          Pop(touchDetector, other.name);
         }
     }
 
-    //private void Pop()
-    //{
-        // Add pop effect or sound here if needed
-    //    Destroy(gameObject);
-    //}
+  public void Pop(TouchDetection touchDetector, string whatTouched) 
+  {
+      audioSource.Play();
+      StartCoroutine(DestroyAfterSoundAndHaptic(touchDetector, whatTouched));
+  }
+
+  IEnumerator DestroyAfterSoundAndHaptic(TouchDetection touchDetector, string whatTouched) 
+  {   
+      // Wait until the sound is played
+      while (audioSource.isPlaying) 
+      {
+          yield return null;
+      }
+
+      if (touchDetector.indexON | touchDetector.thumbON)
+      {
+        // Call HapticControl on the provided touchDetector after 0.5 seconds
+        touchDetector.HapticControl(whatTouched);
+        if (touchDetector.indexON)
+        {
+          touchDetector.indexON = !touchDetector.indexON;
+        }
+        else
+        {
+          touchDetector.thumbON = !touchDetector.thumbON;
+        }
+      }
+
+      // Now can destroy the bubble
+      Destroy(gameObject);
+  }
 }

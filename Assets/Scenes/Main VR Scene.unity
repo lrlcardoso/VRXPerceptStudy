@@ -1003,13 +1003,14 @@ GameObject:
   - component: {fileID: 537635029}
   - component: {fileID: 537635028}
   - component: {fileID: 537635027}
+  - component: {fileID: 537635033}
   m_Layer: 0
   m_Name: Bubble
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &537635027
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1022,8 +1023,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6da2b89de23722c4eba594f7c1217ffd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  floatSpeed: 1
-  maxLifetime: 10
 --- !u!82 &537635028
 AudioSource:
   m_ObjectHideFlags: 0
@@ -1035,7 +1034,7 @@ AudioSource:
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
   m_audioClip: {fileID: 8300000, guid: bdef782edb2efb04181e5359996aaeeb, type: 3}
-  m_PlayOnAwake: 1
+  m_PlayOnAwake: 0
   m_Volume: 1
   m_Pitch: 1
   Loop: 0
@@ -1139,7 +1138,7 @@ SphereCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 0.05
+  m_Radius: 0.5
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!23 &537635030
 MeshRenderer:
@@ -1206,6 +1205,20 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &537635033
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 537635026}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7aa2122f852e99f4f98511d8690b87d5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  indexON: 0
+  thumbON: 0
 --- !u!1 &568284116
 GameObject:
   m_ObjectHideFlags: 0
@@ -4170,6 +4183,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7aa2122f852e99f4f98511d8690b87d5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  indexON: 0
+  thumbON: 0
 --- !u!136 &1811851921
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -4283,6 +4298,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7aa2122f852e99f4f98511d8690b87d5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  indexON: 0
+  thumbON: 0
 --- !u!95 &1948164815 stripped
 Animator:
   m_CorrespondingSourceObject: {fileID: 5753407484534935495, guid: 993c8995409346c4e84900b440ad1f38,
