@@ -27,10 +27,11 @@ public class ExperimentManager : MonoBehaviour
     private Transform origin;
     private Transform target;
 
-    [Header("CCT Status")]
+    [Header("Experiment Status")]
     [Tooltip("")]
-    public string CongruentTrials;
-    public string IncongruentTrials;
+    public string TargetOnlyTrials;
+    public string FamiliarizationTrials;
+    public string CCTTrials;
     public string NoGoTrials;
 
     void Start()
