@@ -96,6 +96,10 @@ public class RunCCT : MonoBehaviour
     private byte[] indexHand_CCT = new byte[] { 0x36 };
     
     // Other variables
+    bool startRecordingFPS = false;
+    int frameCount = 0;
+    float deltaTime = 0.0f;
+    float meanPeriod = 0.0f;
     int frameCounter;
     bool sentMsgFlag = false;
     private char[,] trials;
@@ -147,10 +151,11 @@ public class RunCCT : MonoBehaviour
         public char Visual_Distractor { get; set; }
         public char Response { get; set; }
         public int ElapsedTime { get; set; }
+        public float MeanUpdatePeriod { get; set; }
 
         public override string ToString()
         {
-            return $"{Timestamp},{Test},{Type},{Vibration},{Visual_Distractor},{Response},{ElapsedTime}";
+            return $"{Timestamp},{Test},{Type},{Vibration},{Visual_Distractor},{Response},{ElapsedTime},{MeanUpdatePeriod}";
         }
     }
 
@@ -187,7 +192,7 @@ public class RunCCT : MonoBehaviour
         // Ensure the file has headers if it's new
         if (!File.Exists(filePath))
         {
-            File.WriteAllText(filePath, "Timestamp,Test,Type,Vibration,Visual Distractor,Response,ElapsedTime\n");
+            File.WriteAllText(filePath, "Timestamp,Test,Type,Vibration,Visual Distractor,Response,Elapsed Time,Mean Update Period\n");
         }
 
         // Find the necessary GameObjects
@@ -287,7 +292,7 @@ public class RunCCT : MonoBehaviour
         }
         
         // Display the results (for debugging)
-        PrintResults(trials);
+        // PrintResults(trials);
 
         numberOfElements = trials.GetLength(1);
         List<int> vector = HandPosVec(numberOfPossibilities, numberOfElements);
@@ -305,7 +310,8 @@ public class RunCCT : MonoBehaviour
 
     IEnumerator StepsCCT(PositionRotationCombo[] positionRotationArray, List<int> vector)
     {
-        
+        startRecordingFPS = true;
+
         for (int trial = 0; trial < trials.GetLength(1); trial++){
 
             yield return StartCoroutine(positionHands(trial, positionRotationArray, vector));
@@ -318,6 +324,8 @@ public class RunCCT : MonoBehaviour
 
             yield return StartCoroutine(saveAndStatus(trial));
         }
+
+        startRecordingFPS = false;
 
         Debug.Log("CCT successfully completed!");
     }
@@ -636,6 +644,10 @@ public class RunCCT : MonoBehaviour
 
     IEnumerator saveAndStatus(int trial)
     {
+        meanPeriod = deltaTime/frameCount;
+        frameCount = 0;
+        deltaTime = 0.0f;
+
         // Create a new trial data object
         TrialData trialData = new TrialData
         {
@@ -645,7 +657,8 @@ public class RunCCT : MonoBehaviour
             Vibration = trials[0,trial],
             Visual_Distractor = trials[1,trial],
             Response = button,
-            ElapsedTime = elapsedTime
+            ElapsedTime = elapsedTime,
+            MeanUpdatePeriod = meanPeriod
         };
 
         // Write the trial data to the CSV file
@@ -800,5 +813,13 @@ public class RunCCT : MonoBehaviour
             }
         }
     }
-
+    void Update()
+    {
+        if(startRecordingFPS)
+        {
+            // Record the time taken for the current frame and sum up to the previous frames within the current trial
+            frameCount++;
+            deltaTime += Time.deltaTime;
+        }
+    }
 }
