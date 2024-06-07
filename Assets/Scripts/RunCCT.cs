@@ -87,7 +87,9 @@ public class RunCCT : MonoBehaviour
     private GameObject stopwatch;
 
     // User's hand position (wrist)
-    private Transform userHand; 
+    private GameObject userHand; 
+
+    private Animator handAnimator; 
      
     // Messages to communicate with Arduino
     private byte[] thumbShoulder_CCT = new byte[] { 0x33 };
@@ -96,6 +98,7 @@ public class RunCCT : MonoBehaviour
     private byte[] indexHand_CCT = new byte[] { 0x36 };
     
     // Other variables
+    MonoBehaviour scriptToDisable;
     bool startRecordingFPS = false;
     int frameCount = 0;
     float deltaTime = 0.0f;
@@ -196,7 +199,7 @@ public class RunCCT : MonoBehaviour
         }
 
         // Find the necessary GameObjects
-        userHand = GameObject.Find("Rig/Camera Offset/RightHand").transform;
+        userHand = GameObject.Find("Rig/Camera Offset/RightHand");
         hapticControl = GameObject.Find("Haptic Control").GetComponent<HapticControl>();
         experimentManager = GameObject.Find("Experiment Manager").GetComponent<ExperimentManager>();
         fixationMark = Instantiate(Resources.Load<GameObject>("Prefabs/fixationMark"), Vector3.zero, Quaternion.identity);
@@ -210,6 +213,15 @@ public class RunCCT : MonoBehaviour
         // Initialize the array with desired combinations of position and rotation
         positionRotationArray[0] = new PositionRotationCombo(new Vector3(0.25f, 1.02f, 0.30f), new Vector3(307.77f, 302.50f, 27.84f));
         positionRotationArray[1] = new PositionRotationCombo(new Vector3 (-0.05f, 1.03f, 0.33f), new Vector3(306.80f, 264.32f, 28.40f));
+
+
+        // Disable the control of the hands during the CCT but, before, set the prefab open         
+        handAnimator = userHand.GetComponent<Animator>();
+        handAnimator.SetFloat("Blend", 1.0f);
+        // Get the script component from the target GameObject
+        scriptToDisable = (MonoBehaviour)userHand.GetComponent("PinchControl");
+        // Disable the script
+        scriptToDisable.enabled = false;
 
         // Create a 2D array to store the trials matrix that stores the combinations of incongruent, congruent, CCT practice (if applicable) and nogo trials 
         if(test == "pre")
@@ -326,6 +338,7 @@ public class RunCCT : MonoBehaviour
         }
 
         startRecordingFPS = false;
+        scriptToDisable.enabled = true;
 
         Debug.Log("CCT successfully completed!");
     }
@@ -353,7 +366,7 @@ public class RunCCT : MonoBehaviour
         while (true)
         {
         // Check if the player is within the detection radius of the target position
-        float distanceToTarget = Vector3.Distance(userHand.position, handRefPos.transform.position);
+        float distanceToTarget = Vector3.Distance(userHand.transform.position, handRefPos.transform.position);
         
             if (distanceToTarget <= detectionRadius)
             {
@@ -443,8 +456,8 @@ public class RunCCT : MonoBehaviour
         else
         {
             // Get the positions in with the visual distractors will appear
-            indexTip = userHand.Find("R_Wrist/R_IndexMetacarpal/R_IndexProximal/R_IndexIntermediate/R_IndexDistal/R_IndexTip");
-            thumbTip = userHand.Find("R_Wrist/R_ThumbMetacarpal/R_ThumbProximal/R_ThumbDistal/R_ThumbTip");
+            indexTip = userHand.transform.Find("R_Wrist/R_IndexMetacarpal/R_IndexProximal/R_IndexIntermediate/R_IndexDistal/R_IndexTip");
+            thumbTip = userHand.transform.Find("R_Wrist/R_ThumbMetacarpal/R_ThumbProximal/R_ThumbDistal/R_ThumbTip");
 
             // Define the visual distractor to show in this trial
             switch (trials[1,trial])
