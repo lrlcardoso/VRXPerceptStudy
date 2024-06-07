@@ -12,14 +12,27 @@ public class RunCCT : MonoBehaviour
     private string fileName = "test.csv";
 
     // Parameters for the CCT ----------------------------------------------------------
-    string test = "pre"; // Can be "pre" or "post"
+    string test = "post"; // Can be "pre" or "post"
     string testType = "H2S"; // Can be "H2H" (Hand-to-Hand) or "H2S" (Hand-to-Shoulder)
 
     // WARNING: nTrials (below) needs to be a multiple of 4
     int nTrials = 8; // Total number of trials, congruant + incongruent  
 
-   // WARNING: nTrials_noGo (below) needs to be a multiple of 2  
+    // WARNING: nTrials_noGo (below) needs to be a multiple of 2  
     int nTrials_noGo = 2; // Number of no go trials
+
+    // The variable nTrials_targetOnly, defines the total number of trials in which no visual 
+    // distractor will happen (only vibration). They are necessary in order to accustom the 
+    // participants to the vibrotactile elevation discrimination task. The number of 
+    // nTrials_targetOnly = 10 was defined based on previous studies.
+    // Importantly, this is only added to "pre" tests, either H2S or H2H.
+    int nTrials_targetOnly = 4;  
+
+    // The variable nTrials_familiarization, defines the total number of trials (congruant + 
+    // incongruent) that will preceed the actual test. The number of 
+    // nTrials_familiarization = 20 was defined based on previous studies.
+    // Importantly, this is only added to "pre" tests, either H2S or H2H.
+    int nTrials_familiarization = 8; 
     
     // Both, activeFrames and inactiveFrames (below) are used to control the flickering frequency. 
     // It is counted in multiples of the refresh period (around 14ms, for 72Hz). So, if both are 
@@ -88,7 +101,8 @@ public class RunCCT : MonoBehaviour
     private char[,] trials;
     const char thumb = 'T';
     const char index = 'I';
-    const char noGo = 'N';
+    const char noGo = 'B';
+    const char none = 'N';
     private float detectionRadius = 0.1f; // Radius for detecting proximity
     private float requiredStayTime = 1f; // Time required to stay in position to trigger color change
     private float timeInPosition = 0f; // Variable to counts the time that stays in position
@@ -107,7 +121,21 @@ public class RunCCT : MonoBehaviour
     Renderer renderer_fixationMark;
     int congruent = 0;
     int incongruent = 0;
+    int familiarization = 0;
+    int targetOnly = 0;
     int nogo = 0;
+    int nTargetOnlyThumb;
+    int nTargetOnlyFinger;
+    int nCongruentFamiliarizationThumb;
+    int nCongruentFamiliarizationFinger;
+    int nIncongruentFamiliarizationThumbFinger;
+    int nIncongruentFamiliarizationFingerThumb;
+    int nCongruentThumb;
+    int nCongruentFinger;
+    int nIncongruentThumbFinger;
+    int nIncongruentFingerThumb;
+    int nThumbNoGo;
+    int nFingerNoGo;
 
     // TrialData class to hold each trial's data
     public class TrialData
@@ -178,36 +206,90 @@ public class RunCCT : MonoBehaviour
         positionRotationArray[0] = new PositionRotationCombo(new Vector3(0.25f, 1.02f, 0.30f), new Vector3(307.77f, 302.50f, 27.84f));
         positionRotationArray[1] = new PositionRotationCombo(new Vector3 (-0.05f, 1.03f, 0.33f), new Vector3(306.80f, 264.32f, 28.40f));
 
-        // Create a 2D array to store the trials matrix that stores the combinations of incongruent, congruent and nogo trials 
-        trials = new char[2, nTrials + nTrials_noGo];
+        // Create a 2D array to store the trials matrix that stores the combinations of incongruent, congruent, CCT practice (if applicable) and nogo trials 
+        if(test == "pre")
+        {
+            trials = new char[2, nTrials + nTrials_noGo + nTrials_targetOnly + nTrials_familiarization];
 
-        // Define the balance among all conditions
-        int nCongruentThumb = nTrials / 4;
-        int nCongruentFinger = nTrials / 4;
-        int nIncongruentThumbFinger = nTrials / 4;
-        int nIncongruentFingerThumb = nTrials / 4;
-        int nThumbNoGo = nTrials_noGo / 2;
-        int nFingerNoGo = nTrials_noGo / 2;
+            // Define the balance among all conditions
+            nTargetOnlyThumb = (nTrials_targetOnly) / 2;
+            nTargetOnlyFinger = (nTrials_targetOnly) / 2;
 
-        // Add all the possibilities to the matrix as per the parameters of the test
-        AddTrials(trials, thumb, thumb, 0, nCongruentThumb); // Add congruent trials thumb-thumb
-        AddTrials(trials, index, index, nCongruentThumb, nCongruentFinger); // Add congruent trials index-index
-        AddTrials(trials, thumb, index, 2 * nCongruentThumb, nIncongruentThumbFinger); // Add incongruent trials thumb-index
-        AddTrials(trials, index, thumb, 3 * nCongruentThumb, nIncongruentFingerThumb); // Add incongruent trials index-thumb
-        AddTrials(trials, thumb, noGo, nTrials, nThumbNoGo); // Add noGo trials, thumb-N
-        AddTrials(trials, index, noGo, nTrials + nThumbNoGo, nFingerNoGo); // Add noGo trials, index-N
-        
-        // Shuffle the trials using Fisher-Yates algorithm
-        Shuffle(trials, nTrials + nTrials_noGo);
+            nCongruentFamiliarizationThumb = (nTrials_familiarization) / 4;
+            nCongruentFamiliarizationFinger = (nTrials_familiarization) / 4;
+            nIncongruentFamiliarizationThumbFinger = (nTrials_familiarization) / 4;
+            nIncongruentFamiliarizationFingerThumb = (nTrials_familiarization) / 4;
+
+            nCongruentThumb = nTrials / 4;
+            nCongruentFinger = nTrials / 4;
+            nIncongruentThumbFinger = nTrials / 4;
+            nIncongruentFingerThumb = nTrials / 4;
+
+            nThumbNoGo = nTrials_noGo / 2;
+            nFingerNoGo = nTrials_noGo / 2;
+
+            // Add all the possibilities to the matrix as per the parameters of the test
+            AddTrials(trials, thumb, none, 0, nTargetOnlyThumb); // Add thumb-none
+            AddTrials(trials, index, none, nTargetOnlyThumb, nTargetOnlyFinger); // Add index-none
+
+            AddTrials(trials, thumb, thumb, nTrials_targetOnly, nCongruentFamiliarizationThumb); // Add congruent trials thumb-thumb
+            AddTrials(trials, index, index, nTrials_targetOnly + nCongruentFamiliarizationThumb, nCongruentFamiliarizationFinger); // Add congruent trials index-index
+            AddTrials(trials, thumb, index, nTrials_targetOnly + (2 * nCongruentFamiliarizationThumb), nIncongruentFamiliarizationThumbFinger); // Add incongruent trials thumb-index
+            AddTrials(trials, index, thumb, nTrials_targetOnly +  (3 * nCongruentFamiliarizationThumb), nIncongruentFamiliarizationFingerThumb); // Add incongruent trials index-thumb
+
+            AddTrials(trials, thumb, thumb, nTrials_targetOnly + nTrials_familiarization, nCongruentThumb); // Add congruent trials thumb-thumb
+            AddTrials(trials, index, index, nTrials_targetOnly + nTrials_familiarization + nCongruentThumb, nCongruentFinger); // Add congruent trials index-index
+            AddTrials(trials, thumb, index, nTrials_targetOnly + nTrials_familiarization + (2 * nCongruentThumb), nIncongruentThumbFinger); // Add incongruent trials thumb-index
+            AddTrials(trials, index, thumb, nTrials_targetOnly + nTrials_familiarization + (3 * nCongruentThumb), nIncongruentFingerThumb); // Add incongruent trials index-thumb
+
+            AddTrials(trials, thumb, noGo, nTrials_targetOnly + nTrials_familiarization + nTrials, nThumbNoGo); // Add noGo trials, thumb-N
+            AddTrials(trials, index, noGo, nTrials_targetOnly + nTrials_familiarization + nTrials + nThumbNoGo, nFingerNoGo); // Add noGo trials, index-N
+
+            // Shuffle the trials using Fisher-Yates algorithm
+            Shuffle(trials, 0, nTrials_familiarization + nTrials + nTrials_noGo);
+            Shuffle(trials, nTrials_targetOnly, nTrials + nTrials_noGo);
+            Shuffle(trials, nTrials_targetOnly + nTrials_familiarization, 0);
+
+            // Set the CCT status
+            experimentManager.TargetOnlyTrials = "0 out of " + nTrials_targetOnly + ".";
+            experimentManager.FamiliarizationTrials = "0 out of " + nTrials_familiarization + ".";
+            experimentManager.CCTTrials = "0 out of " + nTrials + ".";
+            experimentManager.NoGoTrials = "0  out of " + nTrials_noGo + ".";
+        }
+        else
+        {
+            trials = new char[2, nTrials + nTrials_noGo];
+
+            // Define the balance among all conditions
+            nCongruentThumb = nTrials / 4;
+            nCongruentFinger = nTrials / 4;
+            nIncongruentThumbFinger = nTrials / 4;
+            nIncongruentFingerThumb = nTrials / 4;
+            nThumbNoGo = nTrials_noGo / 2;
+            nFingerNoGo = nTrials_noGo / 2;
+
+            // Add all the possibilities to the matrix as per the parameters of the test
+            AddTrials(trials, thumb, thumb, 0, nCongruentThumb); // Add congruent trials thumb-thumb
+            AddTrials(trials, index, index, nCongruentThumb, nCongruentFinger); // Add congruent trials index-index
+            AddTrials(trials, thumb, index, 2 * nCongruentThumb, nIncongruentThumbFinger); // Add incongruent trials thumb-index
+            AddTrials(trials, index, thumb, 3 * nCongruentThumb, nIncongruentFingerThumb); // Add incongruent trials index-thumb
+            AddTrials(trials, thumb, noGo, nTrials, nThumbNoGo); // Add noGo trials, thumb-N
+            AddTrials(trials, index, noGo, nTrials + nThumbNoGo, nFingerNoGo); // Add noGo trials, index-N
+
+            // Shuffle the trials using Fisher-Yates algorithm
+            Shuffle(trials, 0, 0);
+
+            // Set the CCT status
+            experimentManager.TargetOnlyTrials = "NA";
+            experimentManager.FamiliarizationTrials = "NA";
+            experimentManager.CCTTrials = "0 out of " + nTrials + ".";
+            experimentManager.NoGoTrials = "0  out of " + nTrials_noGo + ".";
+        }
         
         // Display the results (for debugging)
-        // PrintResults(trials);
+        PrintResults(trials);
 
-        experimentManager.CongruentTrials = "0 out of " + nTrials/2 + ".";
-        experimentManager.IncongruentTrials = "0 out of " + nTrials/2 + ".";
-        experimentManager.NoGoTrials = "0  out of " + nTrials_noGo + ".";
-
-        numberOfElements = nTrials + nTrials_noGo;
+        numberOfElements = trials.GetLength(1);
         List<int> vector = HandPosVec(numberOfPossibilities, numberOfElements);
         ShuffleVector(vector);
 
@@ -315,91 +397,129 @@ public class RunCCT : MonoBehaviour
                 break;
         }
 
-        // Get the positions in with the visual distractors will appear
-        indexTip = userHand.Find("R_Wrist/R_IndexMetacarpal/R_IndexProximal/R_IndexIntermediate/R_IndexDistal/R_IndexTip");
-        thumbTip = userHand.Find("R_Wrist/R_ThumbMetacarpal/R_ThumbProximal/R_ThumbDistal/R_ThumbTip");
-
-        // Define the visual distractor to show in this trial
-        switch (trials[1,trial])
+        if(trials[1,trial] == 'N')
         {
-            case thumb:
-                distractorCount = 1;
-                position = new Vector3[distractorCount];
-                position[0] = thumbTip.position;
-                break;
-            case index:
-                distractorCount = 1;
-                position = new Vector3[distractorCount];
-                position[0] = indexTip.position;
-                break;
-            case noGo:
-                distractorCount = 2;
-                position = new Vector3[distractorCount];
-                position[0] = indexTip.position;
-                position[1] = thumbTip.position;
-                break;
-        }
+            // Change the colour of the fixation mark to green
+            renderer_fixationMark.sharedMaterial.color = Color.green;
 
-        // Create the visual distractor object(s)
-        GameObject[] visualDistractor = new GameObject[distractorCount];
-        for (int ii = 0; ii < visualDistractor.Length; ii++)
+            // Wait with the fixaton mark turned on
+            int fixationTimeFrames = UnityEngine.Random.Range(fixationTimeFramesMin, fixationTimeFramesMax);
+            frameCounter = 0;
+            while (frameCounter < fixationTimeFrames)
+            {
+                frameCounter++;
+                yield return null;
+            }
+            
+            // Turn off the fixation mark
+            fixationMark.SetActive(false);
+
+            // Start the loop to show the visual distractor and vibrate the motor
+            frameCounter = 0;
+            while (frameCounter < flickeringPeriodFrames)
+            {
+                // Send the command to Arduino in frame (systemDelayFrames + delayFrames), to ensure the desired delay
+                if ((frameCounter == (systemDelayFrames + delayFrames)) && !sentMsgFlag)
+                {
+                    hapticControl.comPort.Write(motor, 0, motor.Length);
+                    sentMsgFlag = true;
+                }
+
+                frameCounter++;
+                yield return null;
+            }
+
+            // Reset the flag after finishing the flickering sequence
+            sentMsgFlag = false;
+        }
+        else
         {
-            visualDistractor[ii] = Instantiate(Resources.Load<GameObject>("Prefabs/visualDistractor"), position[ii], Quaternion.identity); 
-            visualDistractor[ii].SetActive(false);
-        }
+            // Get the positions in with the visual distractors will appear
+            indexTip = userHand.Find("R_Wrist/R_IndexMetacarpal/R_IndexProximal/R_IndexIntermediate/R_IndexDistal/R_IndexTip");
+            thumbTip = userHand.Find("R_Wrist/R_ThumbMetacarpal/R_ThumbProximal/R_ThumbDistal/R_ThumbTip");
 
-        // Change the colour of the fixation mark to green
-        renderer_fixationMark.sharedMaterial.color = Color.green;
+            // Define the visual distractor to show in this trial
+            switch (trials[1,trial])
+            {
+                case thumb:
+                    distractorCount = 1;
+                    position = new Vector3[distractorCount];
+                    position[0] = thumbTip.position;
+                    break;
+                case index:
+                    distractorCount = 1;
+                    position = new Vector3[distractorCount];
+                    position[0] = indexTip.position;
+                    break;
+                case noGo:
+                    distractorCount = 2;
+                    position = new Vector3[distractorCount];
+                    position[0] = indexTip.position;
+                    position[1] = thumbTip.position;
+                    break;
+            }
 
-        // Wait with the fixaton mark turned on
-        int fixationTimeFrames = UnityEngine.Random.Range(fixationTimeFramesMin, fixationTimeFramesMax);
-        frameCounter = 0;
-        while (frameCounter < fixationTimeFrames)
-        {
-            frameCounter++;
-            yield return null;
-        }
+            // Create the visual distractor object(s)
+            GameObject[] visualDistractor = new GameObject[distractorCount];
+            for (int ii = 0; ii < visualDistractor.Length; ii++)
+            {
+                visualDistractor[ii] = Instantiate(Resources.Load<GameObject>("Prefabs/visualDistractor"), position[ii], Quaternion.identity); 
+                visualDistractor[ii].SetActive(false);
+            }
+
+            // Change the colour of the fixation mark to green
+            renderer_fixationMark.sharedMaterial.color = Color.green;
+
+            // Wait with the fixaton mark turned on
+            int fixationTimeFrames = UnityEngine.Random.Range(fixationTimeFramesMin, fixationTimeFramesMax);
+            frameCounter = 0;
+            while (frameCounter < fixationTimeFrames)
+            {
+                frameCounter++;
+                yield return null;
+            }
+            
+            // Turn off the fixation mark
+            fixationMark.SetActive(false);
+
+            // Start the loop to show the visual distractor and vibrate the motor
+            frameCounter = 0;
+            while (frameCounter < flickeringPeriodFrames)
+            {
+                // Send the command to Arduino in frame (systemDelayFrames + delayFrames), to ensure the desired delay
+                if ((frameCounter == (systemDelayFrames + delayFrames)) && !sentMsgFlag)
+                {
+                    hapticControl.comPort.Write(motor, 0, motor.Length);
+                    sentMsgFlag = true;
+                }
+
+                // Flicker the visual distractor
+                if (frameCounter % (activeFrames + inactiveFrames) < activeFrames)
+                {
+                    foreach (var distractor in visualDistractor)
+                    {
+                        distractor.SetActive(true);
+                    }
+                }
+                else
+                {
+                    foreach (var distractor in visualDistractor)
+                    {
+                        distractor.SetActive(false);
+                    }
+                }
+                frameCounter++;
+                yield return null;
+            }
+
+            // Reset the flag after finishing the flickering sequence
+            sentMsgFlag = false;
         
-        // Turn off the fixation mark
-        fixationMark.SetActive(false);
-
-        // Start the loop to show the visual distractor and vibrate the motor
-        frameCounter = 0;
-        while (frameCounter < flickeringPeriodFrames)
-        {
-            // Send the command to Arduino in frame (systemDelayFrames + delayFrames), to ensure the desired delay
-            if ((frameCounter == (systemDelayFrames + delayFrames)) && !sentMsgFlag)
+            // Destroy the visual distractor(s)
+            foreach (var distractor in visualDistractor)
             {
-                hapticControl.comPort.Write(motor, 0, motor.Length);
-                sentMsgFlag = true;
+                Destroy(distractor);
             }
-
-            // Flicker the visual distractor
-            if (frameCounter % (activeFrames + inactiveFrames) < activeFrames)
-            {
-                foreach (var distractor in visualDistractor)
-                {
-                    distractor.SetActive(true);
-                }
-            }
-            else
-            {
-                foreach (var distractor in visualDistractor)
-                {
-                    distractor.SetActive(false);
-                }
-            }
-            frameCounter++;
-            yield return null;
-        }
-
-        // Reset the flag after finishing the flickering sequence
-        sentMsgFlag = false;
-    
-        // Destroy the visual distractor(s)
-        foreach (var distractor in visualDistractor)
-        {
-            Destroy(distractor);
         }
 
         yield return null;
@@ -453,7 +573,7 @@ public class RunCCT : MonoBehaviour
         {
             renderer_fixationMark.sharedMaterial.color = Color.green;
             
-            if(trials[1,trial] != 'N') // It is not a no-go trial
+            if(trials[1,trial] != noGo) // It is not a no-go trial
             {       
                 if(trials[0,trial] != button)
                 {
@@ -481,7 +601,7 @@ public class RunCCT : MonoBehaviour
         }
         else
         {
-            if(trials[1,trial] != 'N') // It is not a no-go trial
+            if(trials[1,trial] != noGo) // It is not a no-go trial
             {       
                 stopwatch.transform.LookAt(userEyes);
                 // Get the current rotation of the object
@@ -534,25 +654,66 @@ public class RunCCT : MonoBehaviour
             sw.WriteLine(trialData.ToString());
         }
 
-        if(trials[1,trial] != 'N') // It is not a no-go trial
-        {       
-            if(trials[0,trial] != trials[1,trial])
+        if(test == "pre")
+        {
+
+            if(trial<nTrials_targetOnly)
             {
-                incongruent++;
+                targetOnly++;
+            }
+            else if(trial>=nTrials_targetOnly && trial<(nTrials_familiarization+nTrials_targetOnly))
+            {
+                familiarization++;
             }
             else
             {
-                congruent++;
+                if(trials[1,trial] != noGo) // It is not a no-go trial
+                {       
+                    if(trials[0,trial] != trials[1,trial])
+                    {
+                        incongruent++;
+                    }
+                    else
+                    {
+                        congruent++;
+                    }
+                }
+                else // It is a no-go trial - in this case, the participant needs to withhold the response, as a consequnce, response should be 'O'
+                {
+                    nogo++;
+                }
             }
-        }
-        else // It is a no-go trial - in this case, the participant needs to withhold the response, as a consequnce, response should be 'O'
-        {
-            nogo++;
-        }
 
-        experimentManager.CongruentTrials = congruent + " out of " + nTrials/2 + ".";
-        experimentManager.IncongruentTrials = incongruent + " out of " + nTrials/2 + ".";
-        experimentManager.NoGoTrials = nogo + "  out of " + nTrials_noGo + ".";
+            // Set the CCT status
+            experimentManager.TargetOnlyTrials = targetOnly + " out of " + nTrials_targetOnly + ".";
+            experimentManager.FamiliarizationTrials = familiarization + " out of " + nTrials_familiarization + ".";
+            experimentManager.CCTTrials = (incongruent+congruent) + " out of " + nTrials + ".";
+            experimentManager.NoGoTrials = nogo + "  out of " + nTrials_noGo + ".";
+        }
+        else
+        {
+            if(trials[1,trial] != noGo) // It is not a no-go trial
+            {       
+                if(trials[0,trial] != trials[1,trial])
+                {
+                    incongruent++;
+                }
+                else
+                {
+                    congruent++;
+                }
+            }
+            else // It is a no-go trial - in this case, the participant needs to withhold the response, as a consequnce, response should be 'O'
+            {
+                nogo++;
+            }
+
+            // Set the CCT status
+            experimentManager.TargetOnlyTrials = "NA";
+            experimentManager.FamiliarizationTrials = "NA";
+            experimentManager.CCTTrials = (incongruent+congruent) + " out of " + nTrials + ".";
+            experimentManager.NoGoTrials = nogo + "  out of " + nTrials_noGo + ".";
+        }
 
         yield return null;
     }
@@ -575,11 +736,15 @@ public class RunCCT : MonoBehaviour
         }
     }
 
-    static void Shuffle(char[,] array, int length)
+    static void Shuffle(char[,] array, int linesToExcludeFromTop, int linesToExcludeFromBottom)
     {
-        for (int i = length - 1; i > 0; i--)
+        int length = array.GetLength(1);
+        int start = linesToExcludeFromTop;
+        int end = length - linesToExcludeFromBottom - 1;
+
+        for (int i = end; i > start; i--)
         {
-            int j = UnityEngine.Random.Range(0, i + 1);
+            int j = UnityEngine.Random.Range(start, i + 1);
             for (int k = 0; k < array.GetLength(0); k++)
             {
                 char temp = array[k, i];
@@ -635,4 +800,5 @@ public class RunCCT : MonoBehaviour
             }
         }
     }
+
 }
