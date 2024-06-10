@@ -26,6 +26,7 @@ public class ExperimentManager : MonoBehaviour
     private Transform head;
     private Transform origin;
     private Transform target;
+    private TouchDetection touchDetector;
 
     [Header("Experiment Status")]
     [Tooltip("")]
@@ -39,6 +40,8 @@ public class ExperimentManager : MonoBehaviour
         head = GameObject.Find("Rig/Camera Offset/Main Camera").transform;
         origin = GameObject.Find("Rig").transform;
         target = GameObject.Find("Scene/Recenter Position").transform;
+        
+        touchDetector = GameObject.Find("Rig/Camera Offset/RightHand/R_Wrist/R_IndexMetacarpal/R_IndexProximal/R_IndexIntermediate/R_IndexDistal/R_IndexTip").GetComponent<TouchDetection>();
     }
 
     void Update()
@@ -71,8 +74,15 @@ public class ExperimentManager : MonoBehaviour
         Recenter();
     }
 
-    public void startTest()
+    public void toggle_HapticBox()
     {
-        //StartCCT = true;
+        if (touchDetector.indexON)
+        {
+            touchDetector.HapticControl("R_IndexTip");
+        }
+        else if (touchDetector.thumbON)
+        {
+            touchDetector.HapticControl("R_ThumbTip");
+        }
     }
 }

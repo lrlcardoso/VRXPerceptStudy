@@ -20,7 +20,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Bubble
+  m_Name: BubbleThumb
   m_Shader: {fileID: 4800000, guid: 933532a4fcc9baf4fa0491de14d08ed7, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
@@ -139,8 +139,8 @@ Material:
     - _ZWrite: 0
     m_Colors:
     - _Albedo: {r: 1, g: 1, b: 1, a: 0}
-    - _BaseColor: {r: 0.5600568, g: 0.8679245, b: 0.8649669, a: 0.89411765}
-    - _Color: {r: 0.5600568, g: 0.8679245, b: 0.8649669, a: 0.89411765}
+    - _BaseColor: {r: 1, g: 0.81960785, b: 0.5058824, a: 0.89411765}
+    - _Color: {r: 1, g: 0.81960785, b: 0.5058824, a: 0.89411765}
     - _EdgeColor: {r: 0, g: 0.2901961, b: 2, a: 0}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecColor: {r: 0.19998023, g: 0.19998023, b: 0.19998023, a: 0.5}

@@ -14,9 +14,9 @@ public class ExperimentManagerEditor : Editor
             exam.ResetView();
         }
 
-        if(GUILayout.Button("Start CCT"))
+        if(GUILayout.Button("Toggle HapticBox"))
         {
-            exam.startTest();
+            exam.toggle_HapticBox();
         }
         
     }

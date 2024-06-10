@@ -8,17 +8,18 @@ using System.IO.Ports;
 public class Bubble : MonoBehaviour 
 {
     AudioSource audioSource;
-    private TouchDetection touchDetection;
+    private VRPractice vrPractice;
 
     void Awake() 
     {
         audioSource = GetComponent<AudioSource>();
+        //vrPractice = Resources.Load<GameObject>("Prefabs/VR Practice").GetComponent<VRPractice>();
+        vrPractice = GameObject.Find("VRPractice").GetComponent<VRPractice>();
     }
 
     private void OnTriggerEnter(Collider other)
     {
-        // Check if the collider belongs to the player's hand or pointer
-        if (other.name == "R_IndexTip" | other.name == "R_ThumbTip")
+        if (other.name == gameObject.tag & vrPractice.isAble2pinch)
         {
           TouchDetection touchDetector = other.GetComponent<TouchDetection>();
           Pop(touchDetector, other.name);
@@ -41,19 +42,12 @@ public class Bubble : MonoBehaviour
 
       if (touchDetector.indexON | touchDetector.thumbON)
       {
-        // Call HapticControl on the provided touchDetector after 0.5 seconds
         touchDetector.HapticControl(whatTouched);
-        if (touchDetector.indexON)
-        {
-          touchDetector.indexON = !touchDetector.indexON;
-        }
-        else
-        {
-          touchDetector.thumbON = !touchDetector.thumbON;
-        }
       }
 
       // Now can destroy the bubble
       Destroy(gameObject);
   }
 }
+
+

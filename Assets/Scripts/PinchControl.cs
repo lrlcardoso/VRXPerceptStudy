@@ -29,7 +29,7 @@ public class PinchControl : MonoBehaviour
     public Animator handAnimator; 
     public GameObject pointerID;
     private ExperimentManager GameSetUp; 
-    private float x = 0.0f;
+    public float x = 0.0f;
     private double accelX;
     private double accelY;
     private double accelZ;
