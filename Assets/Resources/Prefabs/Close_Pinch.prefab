@@ -469,7 +469,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3468337163774251641}
-  - component: {fileID: 89654835045020711}
   - component: {fileID: 5753407484534935495}
   m_Layer: 0
   m_Name: Close_Pinch
@@ -495,18 +494,6 @@ Transform:
   - {fileID: 681777313500168838}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: -90, y: 0, z: 0}
---- !u!114 &89654835045020711
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2621533548043637813}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: dfe0cf489a0cabc459b45207cb707316, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!95 &5753407484534935495
 Animator:
   serializedVersion: 5

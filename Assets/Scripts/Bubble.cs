@@ -9,11 +9,13 @@ public class Bubble : MonoBehaviour
 {
     AudioSource audioSource;
     private VRPractice vrPractice;
+    public bool popped = false;
+    private GameObject block; 
+    private string blockPrefabPath = "Prefabs/block";
 
     void Awake() 
     {
         audioSource = GetComponent<AudioSource>();
-        //vrPractice = Resources.Load<GameObject>("Prefabs/VR Practice").GetComponent<VRPractice>();
         vrPractice = GameObject.Find("VRPractice").GetComponent<VRPractice>();
     }
 
@@ -21,6 +23,7 @@ public class Bubble : MonoBehaviour
     {
         if (other.name == gameObject.tag & vrPractice.isAble2pinch)
         {
+          popped = true;
           TouchDetection touchDetector = other.GetComponent<TouchDetection>();
           Pop(touchDetector, other.name);
         }
@@ -45,8 +48,16 @@ public class Bubble : MonoBehaviour
         touchDetector.HapticControl(whatTouched);
       }
 
-      // Now can destroy the bubble
+      // Get the position of the bubble
+      Vector3 blockPosition = transform.position;
+
+      // Destroy the bubble
       Destroy(gameObject);
+
+      block = Resources.Load<GameObject>(blockPrefabPath);
+
+      // Instantiate the block at the position of the bubble
+      Instantiate(block, blockPosition, Quaternion.Euler(30.0f,30.0f,50.0f));
   }
 }
 

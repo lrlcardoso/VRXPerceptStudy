@@ -1,4 +1,9 @@
+using System;
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
+using System.IO;
+using System.IO.Ports;
 
 public class VRPractice : MonoBehaviour
 {
@@ -12,10 +17,62 @@ public class VRPractice : MonoBehaviour
     private GameObject thumbSphere; // Reference to the thumb sphere
     public bool isAble2pinch = false;
 
+    // new
+    // Path and file name to save the results (CSV file)
+    private string filePath = @"C:\Users\s4659771\Documents\";
+    private string fileName = "VRPractice.csv";
+    int nRepetitions = 4;
+    Vector3 handIniPos = new Vector3(0.06098f,0.85803f,0.20876f); 
+    Quaternion handIniRot = Quaternion.Euler(309.02655f,349.61621f,283.25412f); 
+    Vector3 platformPos = new Vector3(0.0f,0.7f,0.14f); 
+    // User's hand position (wrist)
+    private GameObject userHand; 
+    private float detectionRadius = 0.1f; // Radius for detecting proximity
+    private float requiredStayTime = 1f; // Time required to stay in position to trigger color change
+    private float timeInPosition = 0f; // Variable to counts the time that stays in position
+    private GameObject handIni;
+    bool inBubbleStage = false;
+    private GameObject platformPrefab;
+    float startTime = 0f;
+    float endTime = 0f;
+    string stage = "";
+
+    // RepetitionData class to hold each repetition's data
+    public class RepetitionData
+    {
+        public string Timestamp { get; set; }
+        public int Repetition { get; set; }
+        public string Stage { get; set; }
+        public float StartTime { get; set; }
+        public float EndTime { get; set; }
+        public override string ToString()
+        {
+            return $"{Timestamp},{Repetition},{Stage},{StartTime},{EndTime}";
+        }
+    }
+
     private void Start()
     {
+        // Ensure the directory exists
+        if (!Directory.Exists(filePath))
+        {
+            Directory.CreateDirectory(filePath);
+        }
+
+        // Initialize file path
+        filePath = Path.Combine(filePath, fileName);
+
+        // Ensure the file has headers if it's new
+        if (!File.Exists(filePath))
+        {
+            File.WriteAllText(filePath, "Timestamp, Repetition, Stage, Start Time, End Time\n");
+        }
+
+        // Find the necessary GameObjects
+        userHand = GameObject.Find("Rig/Camera Offset/RightHand");
         pinchControl = GameObject.Find("Rig/Camera Offset/RightHand").GetComponent<PinchControl>();
-        bubblePrefab = Instantiate(Resources.Load<GameObject>("Prefabs/Bubble"), Vector3.zero, Quaternion.identity);
+        bubblePrefab = Resources.Load<GameObject>("Prefabs/Bubble");
+        platformPrefab = Resources.Load<GameObject>("Prefabs/platform");
         
         // Load materials from Resources folder
         material1 = Resources.Load<Material>("Materials/BubbleFinger");
@@ -25,45 +82,91 @@ public class VRPractice : MonoBehaviour
         indexSphere = GameObject.Find("Rig/Camera Offset/RightHand/R_Wrist/R_IndexMetacarpal/R_IndexProximal/R_IndexIntermediate/R_IndexDistal/R_IndexTip/IndexSphere");
         thumbSphere = GameObject.Find("Rig/Camera Offset/RightHand/R_Wrist/R_ThumbMetacarpal/R_ThumbProximal/R_ThumbDistal/R_ThumbTip/ThumbSphere");
 
-        // Instantiate 16 objects with alternating tags and materials
-        for (int i = 0; i < 16; ++i)
-        {
-            SpawnBubble(i);
-        }
+        StartCoroutine(StepsVRPractice());
     }
 
-    void Update()
+    IEnumerator StepsVRPractice()
     {
-        if (pinchControl.x > 0.6f)
-        {
-            // Turn on the spheres
-            indexSphere.SetActive(true);
-            thumbSphere.SetActive(true);
-            isAble2pinch = true;
+
+        for (int repetition = 0; repetition < nRepetitions; repetition++){
+
+            startTime = Time.time;
+            stage = "Hand Positioning";
+
+            yield return StartCoroutine(positionHands());
+
+            endTime = Time.time;
+
+            yield return StartCoroutine(saveData(repetition));
+
+            startTime = Time.time;
+            stage = "Bubble Popping";
+        
+            yield return StartCoroutine(bubble());
+
+            endTime = Time.time;
+
+            yield return StartCoroutine(saveData(repetition));
+
+            startTime = Time.time;
+            stage = "Pick and Place";
+
+            yield return StartCoroutine(pickNplace());
+
+            endTime = Time.time;
+
+            yield return StartCoroutine(saveData(repetition));
         }
-        else
-        {
-            // Turn off the spheres
-            indexSphere.SetActive(false);
-            thumbSphere.SetActive(false);
-            isAble2pinch = false;
-        }
+
+        Debug.Log("VR Practice completed!");
     }
 
-    private void SpawnBubble(int index)
+    IEnumerator positionHands()
     {
+        handIni = Instantiate(Resources.Load<GameObject>("Prefabs/Close_Pinch"), handIniPos, handIniRot);
+        handIni.GetComponentInChildren<SkinnedMeshRenderer>().material = (Material)Resources.Load("Materials/Clear", typeof(Material));
+
+        timeInPosition = 0f;
+        while(true)
+        {
+        // Check if the player is within the detection radius of the target position
+        float distanceToTarget = Vector3.Distance(userHand.transform.position, handIni.transform.position);
+        
+            if ((distanceToTarget <= detectionRadius) & pinchControl.x < 0.1f)
+            {
+                // If the player is within range, start counting time
+                timeInPosition += Time.deltaTime;
+                // If the required time is reached, change the color of the object
+                if (timeInPosition >= requiredStayTime)
+                {
+                    Destroy(handIni);
+                    yield break;
+                }
+            }
+            else
+            {
+                // If the player moves out of range, reset the timer
+                timeInPosition = 0f;
+            }
+            yield return null;
+        }  
+    }
+
+    IEnumerator bubble()
+    {
+        inBubbleStage = true;
         // Generate random position within the specified spawn area
         Vector3 spawnPosition = new Vector3(
-            Random.Range(spawnAreaMin.x, spawnAreaMax.x),
-            Random.Range(spawnAreaMin.y, spawnAreaMax.y),
-            Random.Range(spawnAreaMin.z, spawnAreaMax.z)
+            UnityEngine.Random.Range(spawnAreaMin.x, spawnAreaMax.x),
+            UnityEngine.Random.Range(spawnAreaMin.y, spawnAreaMax.y),
+            UnityEngine.Random.Range(spawnAreaMin.z, spawnAreaMax.z)
         );
 
         // Instantiate the bubble at the random position
         GameObject bubble = Instantiate(bubblePrefab, spawnPosition, Quaternion.identity);
 
-        // Assign tag and material based on the index
-        if (index % 2 == 0)
+        // Randomly choose between the two conditions
+        if (UnityEngine.Random.value < 0.5f) // Random.value returns a float between 0.0 and 1.0
         {
             bubble.tag = "R_IndexTip";
             bubble.GetComponent<Renderer>().material = material1;
@@ -73,5 +176,72 @@ public class VRPractice : MonoBehaviour
             bubble.tag = "R_ThumbTip";
             bubble.GetComponent<Renderer>().material = material2;
         }
+
+        Bubble bubbleCtr = bubble.GetComponent<Bubble>();
+
+        while(!bubbleCtr.popped)
+        {
+            yield return null;
+        }
+        inBubbleStage = false;
+    }
+
+    IEnumerator pickNplace()
+    {
+        GameObject platform = Instantiate(platformPrefab, platformPos, Quaternion.identity);
+        DetectObject platformCtr = platform.GetComponent<DetectObject>();
+        while(!platformCtr.objectInPlatform)
+        {
+            yield return null;
+        }
+    }
+
+    IEnumerator saveData(int repetition)
+    {
+        // Create a new trial data object
+        RepetitionData repetitionData = new RepetitionData
+        {
+            Timestamp = System.DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
+            Repetition = repetition,
+            Stage = stage,
+            StartTime = startTime,
+            EndTime = endTime
+        };
+
+        // Write the trial data to the CSV file
+        using (StreamWriter sw = new StreamWriter(filePath, true))
+        {
+            sw.WriteLine(repetitionData.ToString());
+        }
+
+        yield return null;
+    }
+
+    void Update()
+    {
+        if(inBubbleStage)
+        {
+            if (pinchControl.x > 0.6f)
+            {
+                // Turn on the spheres
+                indexSphere.SetActive(true);
+                thumbSphere.SetActive(true);
+                isAble2pinch = true;
+            }
+            else
+            {
+                // Turn off the spheres
+                indexSphere.SetActive(false);
+                thumbSphere.SetActive(false);
+                isAble2pinch = false;
+            }
+        }
+        else
+        {
+            // Turn off the spheres
+            indexSphere.SetActive(false);
+            thumbSphere.SetActive(false);
+            isAble2pinch = false;
+        } 
     }
 }

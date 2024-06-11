@@ -6,6 +6,9 @@ TagManager:
   tags:
   - R_IndexTip
   - R_ThumbTip
+  - TableSurface
+  - object2move
+  - floor
   layers:
   - Default
   - TransparentFX

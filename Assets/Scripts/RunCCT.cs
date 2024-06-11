@@ -9,7 +9,7 @@ public class RunCCT : MonoBehaviour
 {
     // Path and file name to save the results (CSV file)
     private string filePath = @"C:\Users\s4659771\Documents\";
-    private string fileName = "test.csv";
+    private string fileName = "CCT.csv";
 
     // Parameters for the CCT ----------------------------------------------------------
     string test = "post"; // Can be "pre" or "post"
