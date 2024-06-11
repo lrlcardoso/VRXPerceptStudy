@@ -3,6 +3,7 @@
 // Latest release: 03/May/2024
 // Description: 
 
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -22,36 +23,33 @@ public class ExperimentManager : MonoBehaviour
     public CtrlMode ControlMode = CtrlMode.None;
     // Collect participants ID and save data accordingly
     public string ID = "";
+    public List<GameObject> stages;  // List of stage prefabs
 
     private Transform head;
     private Transform origin;
     private Transform target;
-    private TouchDetection touchDetector;
+    //private TouchDetection touchDetector;
 
-    [Header("Experiment Status")]
+    [Header("CCT Status")]
     [Tooltip("")]
     public string TargetOnlyTrials;
     public string FamiliarizationTrials;
     public string CCTTrials;
     public string NoGoTrials;
 
+    // Other variables
+    private int currentStageIndex = 0;
+    private GameObject currentStage;
+
+    private string filePath = @"C:\Users\s4659771\Documents\"; 
+
     void Start()
     {
         head = GameObject.Find("Rig/Camera Offset/Main Camera").transform;
         origin = GameObject.Find("Rig").transform;
         target = GameObject.Find("Scene/Recenter Position").transform;
-        
-        touchDetector = GameObject.Find("Rig/Camera Offset/RightHand/R_Wrist/R_IndexMetacarpal/R_IndexProximal/R_IndexIntermediate/R_IndexDistal/R_IndexTip").GetComponent<TouchDetection>();
-    }
-
-    void Update()
-    {
-
-        if (Input.GetKeyDown("space"))
-        {
-            Recenter(); 
-        }
-        
+    
+        LoadNextStage();
     }
 
     public void Recenter()
@@ -73,16 +71,56 @@ public class ExperimentManager : MonoBehaviour
     {
         Recenter();
     }
-
-    public void toggle_HapticBox()
+    
+    void Update()
     {
-        if (touchDetector.indexON)
+        if (Input.GetKeyDown("space"))
         {
-            touchDetector.HapticControl("R_IndexTip");
+            Recenter(); 
         }
-        else if (touchDetector.thumbON)
+    }
+
+    public void nextStage()
+    {
+        LoadNextStage();
+    }
+
+    void LoadNextStage()
+    {
+        if (currentStageIndex < stages.Count)
         {
-            touchDetector.HapticControl("R_ThumbTip");
+            // Destroy the current stage if it exists
+            if (currentStage != null)
+            {
+                Destroy(currentStage);
+            }
+
+            // Instantiate the next stage
+            currentStage = Instantiate(stages[currentStageIndex], transform);
+
+            // Set variables in the stage script using reflection
+            //string stageScriptName = currentStage.name.Replace("(Clone)", "").Trim();
+            //Debug.Log(stageScriptName);
+            //var stageScriptType = Type.GetType(stageScriptName);
+            //var stageScriptComponent = currentStage.GetComponent(stageScriptType);
+            //var method = stageScriptType.GetMethod("SetExperimentSettings");
+            //method.Invoke(stageScriptComponent, new object[] {filePath, ID, test, testType});
+
+            currentStageIndex++;
         }
+        else
+        {
+            Debug.Log("All stages completed.");
+        }
+    }
+
+    // Method to get the component from the current stage
+    public T GetCurrentStageComponent<T>() where T : Component
+    {
+        if (currentStage != null)
+        {
+            return currentStage.GetComponent<T>();
+        }
+        return null;
     }
 }

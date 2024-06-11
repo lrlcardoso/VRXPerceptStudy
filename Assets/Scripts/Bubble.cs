@@ -9,14 +9,19 @@ public class Bubble : MonoBehaviour
 {
     AudioSource audioSource;
     private VRPractice vrPractice;
+    private ExperimentManager experimentManager;
     public bool popped = false;
     private GameObject block; 
     private string blockPrefabPath = "Prefabs/block";
 
+    void Start()
+    {
+      experimentManager = GameObject.Find("Experiment Manager").GetComponent<ExperimentManager>();
+      vrPractice = experimentManager.GetCurrentStageComponent<VRPractice>();
+    }
     void Awake() 
     {
         audioSource = GetComponent<AudioSource>();
-        vrPractice = GameObject.Find("VRPractice").GetComponent<VRPractice>();
     }
 
     private void OnTriggerEnter(Collider other)

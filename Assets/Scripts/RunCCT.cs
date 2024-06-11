@@ -16,7 +16,7 @@ public class RunCCT : MonoBehaviour
     string testType = "H2S"; // Can be "H2H" (Hand-to-Hand) or "H2S" (Hand-to-Shoulder)
 
     // WARNING: nTrials (below) needs to be a multiple of 4
-    int nTrials = 8; // Total number of trials, congruant + incongruent  
+    int nTrials = 4; // Total number of trials, congruant + incongruent  
 
     // WARNING: nTrials_noGo (below) needs to be a multiple of 2  
     int nTrials_noGo = 2; // Number of no go trials
@@ -182,7 +182,7 @@ public class RunCCT : MonoBehaviour
 
 
     void Start()
-    {
+    {        
         // Ensure the directory exists
         if (!Directory.Exists(filePath))
         {

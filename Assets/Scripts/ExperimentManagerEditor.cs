@@ -14,9 +14,14 @@ public class ExperimentManagerEditor : Editor
             exam.ResetView();
         }
 
-        if(GUILayout.Button("Toggle HapticBox"))
+        //if(GUILayout.Button("Toggle HapticBox"))
+        //{
+        //    exam.toggle_HapticBox();
+        //}
+
+        if(GUILayout.Button("Next Stage"))
         {
-            exam.toggle_HapticBox();
+            exam.nextStage();
         }
         
     }
