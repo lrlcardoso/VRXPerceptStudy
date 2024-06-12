@@ -20,7 +20,7 @@ public class ExperimentManager : MonoBehaviour
 
     void Definitions()
     {
-        filePath = @"C:\Users\s4659771\Documents\";
+        filePath = @"C:\Users\s4659771\Documents\VRXPerceptStudy\DATA";
 
         // CCT DEFINITIONS -----------------------------------------------------------------------
 
@@ -176,6 +176,8 @@ public class ExperimentManager : MonoBehaviour
         if (Input.GetKeyDown("space"))
         {
             Recenter(); 
+            //Debug.Log(userHand.transform.position);
+            //Debug.Log(userHand.transform.rotation.eulerAngles);
         }
     }
 

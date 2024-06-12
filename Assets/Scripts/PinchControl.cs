@@ -27,8 +27,7 @@ public class PinchControl : MonoBehaviour
 {
     XRHandSubsystem m_HandSubsystem;
     public Animator handAnimator; 
-    public GameObject pointerID;
-    private ExperimentManager GameSetUp; 
+    private ExperimentManager experimentManager; 
     public float x = 0.0f;
     private double accelX;
     private double accelY;
@@ -65,8 +64,11 @@ public class PinchControl : MonoBehaviour
     //Threads for acquiring emg and acc data
     private Thread accThread = default!;
 
-    //Folder were the matrices for the system identification are saved.
-    string folderPath = @"C:\Users\s4659771\Documents\JTI\DATA\";
+    private string id;
+    private string fileName;
+    private string filePath_save;
+    private string filePath_load;
+
 
     //Initialize the matrices that identify the system
     private double[][] A;
@@ -116,28 +118,76 @@ public class PinchControl : MonoBehaviour
         new double[] { 0.0f}
     };
 
+    // ShoulderData class
+    public class ShoulderData
+    {
+        public string Timestamp { get; set; }
+        public double Microseconds { get; set; } 
+        public double Sensor1_Acc_x { get; set; }
+        public double Sensor1_Acc_y { get; set; }
+        public double Sensor1_Acc_z { get; set; }
+        public double Sensor1_Gyr_x { get; set; }
+        public double Sensor1_Gyr_y { get; set; }
+        public double Sensor1_Gyr_z { get; set; }
+        public double Sensor2_Acc_x { get; set; }
+        public double Sensor2_Acc_y { get; set; }
+        public double Sensor2_Acc_z { get; set; }
+        public double Sensor2_Gyr_x { get; set; }
+        public double Sensor2_Gyr_y { get; set; }
+        public double Sensor2_Gyr_z { get; set; }
+
+        public override string ToString()
+        {
+            return $"{Timestamp},{Microseconds},{Sensor1_Acc_x},{Sensor1_Acc_y},{Sensor1_Acc_z},{Sensor1_Gyr_x},{Sensor1_Gyr_y},{Sensor1_Gyr_z},{Sensor2_Acc_x},{Sensor2_Acc_y},{Sensor2_Acc_z},{Sensor2_Gyr_x},{Sensor2_Gyr_y},{Sensor2_Gyr_z}";
+        }
+    }
+
     void Start()
     {
-        GameSetUp = pointerID.GetComponent<ExperimentManager>();
-        
-        if(GameSetUp.ControlMode.ToString()=="Shoulder")
+        experimentManager = GameObject.Find("Experiment Manager").GetComponent<ExperimentManager>();
+
+        // Define the name of the file that will be saved
+        id = experimentManager.ID;
+        fileName = id + "_ShoulderMov.csv";
+
+        // Prepare the file to save data
+        filePath_save = experimentManager.filePath + @"\" + id + @"\1_rawDATA";
+
+        // Ensure the directory exists
+        if (!Directory.Exists(filePath_save))
         {
-            string folder = folderPath + "Subj" + GameSetUp.ID + "/0_calibrationMatrices/";
+            Directory.CreateDirectory(filePath_save);
+        }
+        // Initialize file path
+        filePath_save = Path.Combine(filePath_save, fileName);
+
+        // Ensure the file has headers if it's new
+        if (!File.Exists(filePath_save))
+        {
+            File.WriteAllText(filePath_save, "Timestamp,Acquisition_Time(ms),Sensor1_Acc_x,Sensor1_Acc_y,Sensor1_Acc_z,Sensor1_Gyr_x,Sensor1_Gyr_y,Sensor1_Gyr_z,Sensor2_Acc_x,Sensor2_Acc_y,Sensor2_Acc_z,Sensor2_Gyr_x,Sensor2_Gyr_y,Sensor2_Gyr_z\n");
+        }
+
+        //call function to do the set up with the Delsys base
+        setupDelsys();
+        
+        if(experimentManager.ControlMode.ToString()=="Shoulder")
+        {
+            filePath_load = experimentManager.filePath + @"\" + id + @"\0_calibrationMatrices";
 
             try{
                 // READ ALL MATRIX FOR THE KALMAN FILTER
                 // read matrix A
-                A = MatLoad(folder+"A.txt",',');
+                A = MatLoad(filePath_load+"A.txt",',');
                 // read matrix H
-                H = MatLoad(folder+"H.txt",',');
+                H = MatLoad(filePath_load+"H.txt",',');
                 // read matrix Q
-                Q = MatLoad(folder+"Q.txt",',');
+                Q = MatLoad(filePath_load+"Q.txt",',');
                 // read matrix W
-                W = MatLoad(folder+"W.txt",',');
+                W = MatLoad(filePath_load+"W.txt",',');
                 // read matrix A_t (A transpost)
-                A_t = MatLoad(folder+"A_t.txt",',');
+                A_t = MatLoad(filePath_load+"A_t.txt",',');
                 // read matrix H_t (H transpost)
-                H_t = MatLoad(folder+"H_t.txt",',');
+                H_t = MatLoad(filePath_load+"H_t.txt",',');
             }
             catch (Exception)
             {
@@ -148,11 +198,8 @@ public class PinchControl : MonoBehaviour
             //Create a identity matrix to be used in the last step of the system identification
             I = MatEye(ECov_posteriori.Length,ECov_posteriori[0].Length);
 
-            //call function to do the set up with the Delsys base
-            setupDelsys();
-
         }
-        else if(GameSetUp.ControlMode.ToString()=="None")
+        else if(experimentManager.ControlMode.ToString()=="None")
         {
             Debug.Log("No control mode was selected.");
             Application.Quit();
@@ -162,10 +209,15 @@ public class PinchControl : MonoBehaviour
 
     void FixedUpdate()
     {
+        
         // Update hand pose according to the current x value
         handAnimator.SetFloat("Blend", x);
 
-        if(GameSetUp.ControlMode.ToString()=="Fingers"){
+        GetSensorsData();
+
+        SaveShoulderData();
+
+        if(experimentManager.ControlMode.ToString()=="Fingers"){
 
             if (m_HandSubsystem != null && m_HandSubsystem.running)
                 return;
@@ -188,32 +240,8 @@ public class PinchControl : MonoBehaviour
                 m_HandSubsystem.updatedHands += OnUpdatedHands;
 
         }
-        else if(GameSetUp.ControlMode.ToString()=="Shoulder")
+        else if(experimentManager.ControlMode.ToString()=="Shoulder")
         {
-            // build vector z (feature vector) - same structure used in Matlab
-            z[0][0] =  accXDataList[sensors[0]-1][accXDataList[sensors[0]-1].Count - 1];
-            z[1][0] =  accYDataList[sensors[0]-1][accYDataList[sensors[0]-1].Count - 1]; 
-            z[2][0] =  accZDataList[sensors[0]-1][accZDataList[sensors[0]-1].Count - 1];
-            z[3][0] =  accXDataList[sensors[1]-1][accXDataList[sensors[1]-1].Count - 1];
-            z[4][0] =  accYDataList[sensors[1]-1][accYDataList[sensors[1]-1].Count - 1]; 
-            z[5][0] =  accZDataList[sensors[1]-1][accZDataList[sensors[1]-1].Count - 1];   
-            z[6][0] =  gyrXDataList[sensors[0]-1][gyrXDataList[sensors[0]-1].Count - 1];
-            z[7][0] =  gyrYDataList[sensors[0]-1][gyrYDataList[sensors[0]-1].Count - 1]; 
-            z[8][0] =  gyrZDataList[sensors[0]-1][gyrZDataList[sensors[0]-1].Count - 1];
-            z[9][0] =  gyrXDataList[sensors[1]-1][gyrXDataList[sensors[1]-1].Count - 1];
-            z[10][0] =  gyrYDataList[sensors[1]-1][gyrYDataList[sensors[1]-1].Count - 1]; 
-            z[11][0] =  gyrZDataList[sensors[1]-1][gyrZDataList[sensors[1]-1].Count - 1];
-            accelX = z[0][0];
-            accelY = z[1][0];
-            accelZ = z[2][0];
-            z[12][0] = Math.Atan2(-accelX, Math.Sqrt((accelY*accelY) + (accelZ*accelZ)))*(180/Math.PI);
-            z[13][0] = Math.Atan2(accelY, Math.Sqrt((accelX*accelX) + (accelZ*accelZ)))*(180/Math.PI);
-            accelX = z[3][0];
-            accelY = z[4][0];
-            accelZ = z[5][0];
-            z[14][0] = Math.Atan2(-accelX, Math.Sqrt((accelY*accelY) + (accelZ*accelZ)))*(180/Math.PI);
-            z[15][0] = Math.Atan2(accelY, Math.Sqrt((accelX*accelX) + (accelZ*accelZ)))*(180/Math.PI);
-
             // update x value according to the shoulder position
             X = shoulderElevation();
             x = Convert.ToSingle(X[0][0]);
@@ -223,6 +251,59 @@ public class PinchControl : MonoBehaviour
                 x=0;
             if(x>1)
                 x=1;
+        }
+    }
+
+    private void GetSensorsData()
+    {
+        // build vector z (feature vector) - same structure used in Matlab
+        z[0][0] =  accXDataList[sensors[0]-1][accXDataList[sensors[0]-1].Count - 1];
+        z[1][0] =  accYDataList[sensors[0]-1][accYDataList[sensors[0]-1].Count - 1]; 
+        z[2][0] =  accZDataList[sensors[0]-1][accZDataList[sensors[0]-1].Count - 1];
+        z[3][0] =  accXDataList[sensors[1]-1][accXDataList[sensors[1]-1].Count - 1];
+        z[4][0] =  accYDataList[sensors[1]-1][accYDataList[sensors[1]-1].Count - 1]; 
+        z[5][0] =  accZDataList[sensors[1]-1][accZDataList[sensors[1]-1].Count - 1];   
+        z[6][0] =  gyrXDataList[sensors[0]-1][gyrXDataList[sensors[0]-1].Count - 1];
+        z[7][0] =  gyrYDataList[sensors[0]-1][gyrYDataList[sensors[0]-1].Count - 1]; 
+        z[8][0] =  gyrZDataList[sensors[0]-1][gyrZDataList[sensors[0]-1].Count - 1];
+        z[9][0] =  gyrXDataList[sensors[1]-1][gyrXDataList[sensors[1]-1].Count - 1];
+        z[10][0] =  gyrYDataList[sensors[1]-1][gyrYDataList[sensors[1]-1].Count - 1]; 
+        z[11][0] =  gyrZDataList[sensors[1]-1][gyrZDataList[sensors[1]-1].Count - 1];
+        accelX = z[0][0];
+        accelY = z[1][0];
+        accelZ = z[2][0];
+        z[12][0] = Math.Atan2(-accelX, Math.Sqrt((accelY*accelY) + (accelZ*accelZ)))*(180/Math.PI);
+        z[13][0] = Math.Atan2(accelY, Math.Sqrt((accelX*accelX) + (accelZ*accelZ)))*(180/Math.PI);
+        accelX = z[3][0];
+        accelY = z[4][0];
+        accelZ = z[5][0];
+        z[14][0] = Math.Atan2(-accelX, Math.Sqrt((accelY*accelY) + (accelZ*accelZ)))*(180/Math.PI);
+        z[15][0] = Math.Atan2(accelY, Math.Sqrt((accelX*accelX) + (accelZ*accelZ)))*(180/Math.PI);
+    }
+
+    private void SaveShoulderData()
+    {
+        ShoulderData shoulderData = new ShoulderData()
+        {
+            Timestamp = System.DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
+            Microseconds = (Time.time),
+            Sensor1_Acc_x = z[0][0],
+            Sensor1_Acc_y = z[1][0],
+            Sensor1_Acc_z = z[2][0],
+            Sensor1_Gyr_x = z[6][0],
+            Sensor1_Gyr_y = z[7][0],
+            Sensor1_Gyr_z = z[8][0],
+            Sensor2_Acc_x = z[3][0],
+            Sensor2_Acc_y = z[4][0],
+            Sensor2_Acc_z = z[5][0],
+            Sensor2_Gyr_x = z[9][0],
+            Sensor2_Gyr_y = z[10][0],
+            Sensor2_Gyr_z = z[11][0]
+        };
+
+        using (StreamWriter sw = new StreamWriter(filePath_save, true))
+        {
+            sw.WriteLine(shoulderData.ToString());
         }
     }
 
@@ -237,7 +318,7 @@ public class PinchControl : MonoBehaviour
         indexTip.TryGetPose(out Pose poseIndex);
         thumbTip.TryGetPose(out Pose poseThumb);
 
-        x = Vector3.Distance(poseIndex.position, poseThumb.position)/0.17f;
+        x = Vector3.Distance(poseIndex.position, poseThumb.position)/0.14f;
     }
 
     private double[][] shoulderElevation() 
@@ -325,15 +406,26 @@ public class PinchControl : MonoBehaviour
         Debug.Log("Delsys is ready to be use!");
     }
 
-    void OnApplicationQuit()
+    //void OnApplicationQuit()
+    //{
+        //if(experimentManager.ControlMode.ToString()=="Shoulder")
+        //{
+            //response = SendCommand(COMMAND_STOP);
+            //Debug.Log("COMMAND: " + COMMAND_STOP);
+            //Debug.Log("RESPONSE: " + response);
+            //commandSocket.Close();
+        //}
+    //} 
+
+    void OnDestroy()
     {
-        if(GameSetUp.ControlMode.ToString()=="Shoulder")
-        {
+        //if(experimentManager.ControlMode.ToString()=="Shoulder")
+        //{
             response = SendCommand(COMMAND_STOP);
             Debug.Log("COMMAND: " + COMMAND_STOP);
             Debug.Log("RESPONSE: " + response);
             commandSocket.Close();
-        }
+        //}
     } 
 
     //Send a command to the server and gets the response

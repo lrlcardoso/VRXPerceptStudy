@@ -12,9 +12,9 @@ public class GrabManager : MonoBehaviour
     private Material previousColour;
     float dist = 0.0f;
     float size = 0.0f;
-    float multi = 1.65f;
+    float multi = 1.3f;
     float min_size = 0.019f;
-    bool isGrabbed = false;
+    public bool isGrabbed = false;
 
     
     void Start()

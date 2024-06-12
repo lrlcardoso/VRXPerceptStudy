@@ -3722,7 +3722,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ArduinoPort: COM4
   ControlMode: 2
-  ID: 001
+  ID: P01
   filePath: 
   nTrials: 0
   nTrials_noGo: 0
@@ -3731,12 +3731,7 @@ MonoBehaviour:
   nRepetitions_primaryPrac: 0
   nRepetitions_refresherPrac: 0
   stages:
-  - {fileID: 8796320026850318426, guid: f3e36a5b9f632e54697186177fba7177, type: 3}
-  - {fileID: 8796320026850318426, guid: 0f64a5349ba87bb408b92555d60c2b12, type: 3}
   - {fileID: 2829836504274827119, guid: f3b50b5a3f9872a4f81d83ae787d7625, type: 3}
-  - {fileID: 8796320026850318426, guid: 66aaea5b502e01e48b62d6e72d6a03f6, type: 3}
-  - {fileID: 2829836504274827119, guid: 4cf771179bf0c9f4abb2d5ed330da50b, type: 3}
-  - {fileID: 8796320026850318426, guid: d8bdd550270d03b4994adf004e7d97f5, type: 3}
   CurrentStage: 
   TargetOnlyTrials: 
   FamiliarizationTrials: 
@@ -4090,6 +4085,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c04b64f78e747ce4e967598e2a909186, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  isGrabbed: 0
 --- !u!1 &1837901189
 GameObject:
   m_ObjectHideFlags: 0
@@ -4200,6 +4196,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c04b64f78e747ce4e967598e2a909186, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  isGrabbed: 0
 --- !u!1 &1934401602
 GameObject:
   m_ObjectHideFlags: 0

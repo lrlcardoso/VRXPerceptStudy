@@ -194,7 +194,6 @@ public class RunCCT : MonoBehaviour
 
         // Get important data from ExperimentManager
         id = experimentManager.ID;
-        filePath = experimentManager.filePath;
         nTrials = experimentManager.nTrials;
         nTrials_noGo = experimentManager.nTrials_noGo;
         nTrials_targetOnly = experimentManager.nTrials_targetOnly;
@@ -204,6 +203,7 @@ public class RunCCT : MonoBehaviour
         fileName = id + "_CCT.csv";
 
         // Prepare the file to save data
+        filePath = experimentManager.filePath + @"\" + id + @"\1_rawDATA";
         // Ensure the directory exists
         if (!Directory.Exists(filePath))
         {
@@ -222,8 +222,10 @@ public class RunCCT : MonoBehaviour
         // Array to store position and rotation combinations
         PositionRotationCombo[] positionRotationArray = new PositionRotationCombo[numberOfPossibilities];
         // Initialize the array with desired combinations of position and rotation
-        positionRotationArray[0] = new PositionRotationCombo(new Vector3(0.25f, 1.02f, 0.30f), new Vector3(307.77f, 302.50f, 27.84f));
-        positionRotationArray[1] = new PositionRotationCombo(new Vector3 (-0.05f, 1.03f, 0.33f), new Vector3(306.80f, 264.32f, 28.40f));
+        //positionRotationArray[0] = new PositionRotationCombo(new Vector3(0.25f, 1.02f, 0.30f), new Vector3(307.77f, 302.50f, 27.84f));
+        //positionRotationArray[1] = new PositionRotationCombo(new Vector3 (-0.05f, 1.03f, 0.33f), new Vector3(306.80f, 264.32f, 28.40f));
+        positionRotationArray[0] = new PositionRotationCombo(new Vector3(0.21f, 0.74f, 0.36f), new Vector3(337.98f, 332.61f, 298.36f));
+        positionRotationArray[1] = new PositionRotationCombo(new Vector3(0.21f, 0.74f, 0.36f), new Vector3(337.98f, 332.61f, 298.36f));
 
 
         // Disable the control of the hands during the CCT but, before, set the prefab open         

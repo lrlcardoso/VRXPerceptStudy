@@ -26,6 +26,8 @@ public class VRPractice : MonoBehaviour
     private Material material2;
     private GameObject indexSphere; // Reference to the index finger sphere
     private GameObject thumbSphere; // Reference to the thumb sphere
+    private GameObject platform;
+    private GameObject table;
     public bool isAble2pinch = false;
     int nRepetitions;
     string id;
@@ -35,11 +37,12 @@ public class VRPractice : MonoBehaviour
     int nRepetitions_refresherPrac;
     Vector3 handIniPos = new Vector3(0.06098f,0.85803f,0.20876f); 
     Quaternion handIniRot = Quaternion.Euler(309.02655f,349.61621f,283.25412f); 
-    Vector3 platformPos = new Vector3(0.0f,0.7f,0.14f); 
+    Vector3 platformPos; 
     // User's hand position (wrist)
     private GameObject userHand; 
     // GameObject to exchange info with the ExperimentManager
     private ExperimentManager experimentManager;
+    private DetectObject platformCtr;
     private float detectionRadius = 0.1f; // Radius for detecting proximity
     private float requiredStayTime = 1f; // Time required to stay in position to trigger color change
     private float timeInPosition = 0f; // Variable to counts the time that stays in position
@@ -70,7 +73,6 @@ public class VRPractice : MonoBehaviour
         // Get important data from ExperimentManager
         experimentManager = GameObject.Find("Experiment Manager").GetComponent<ExperimentManager>();
         id = experimentManager.ID;
-        filePath = experimentManager.filePath;
         nRepetitions_primaryPrac = experimentManager.nRepetitions_primaryPrac;
         nRepetitions_refresherPrac = experimentManager.nRepetitions_refresherPrac;
 
@@ -78,6 +80,7 @@ public class VRPractice : MonoBehaviour
         fileName = id + "_PracticeTimes.csv";
 
         // Prepare the file to save data
+        filePath = experimentManager.filePath + @"\" + id + @"\1_rawDATA";
         // Ensure the directory exists
         if (!Directory.Exists(filePath))
         {
@@ -98,6 +101,13 @@ public class VRPractice : MonoBehaviour
         pinchControl = GameObject.Find("Rig/Camera Offset/RightHand").GetComponent<PinchControl>();
         bubblePrefab = Resources.Load<GameObject>("Prefabs/Bubble");
         platformPrefab = Resources.Load<GameObject>("Prefabs/platform");
+        table = GameObject.Find("Scene/Table");
+                
+        // Set platform position based on the table position and platform thickness
+        float tableY = table.transform.position.y;
+        float platformThickness = platformPrefab.transform.localScale.y;
+        platformPos = new Vector3(0.0f, tableY + platformThickness, 0.14f); // Keep x and z as original
+        
         
         // Load materials from Resources folder
         material1 = Resources.Load<Material>("Materials/BubbleFinger");
@@ -128,9 +138,11 @@ public class VRPractice : MonoBehaviour
 
     IEnumerator runVRPractice()
     {
+        platform = Instantiate(platformPrefab, platformPos, Quaternion.identity);
+        platformCtr = platform.GetComponent<DetectObject>();
 
-        for (int repetition = 0; repetition < nRepetitions; repetition++){
-
+        for (int repetition = 0; repetition < nRepetitions; repetition++)
+        {
             startTime = Time.time;
             stage = "Hand Positioning";
 
@@ -159,7 +171,10 @@ public class VRPractice : MonoBehaviour
             yield return StartCoroutine(saveData(repetition));
 
             yield return StartCoroutine(showStatus(repetition));
+
         }
+        
+        yield return StartCoroutine(DestroyAfterSound());
     }
 
     IEnumerator positionHands()
@@ -229,12 +244,11 @@ public class VRPractice : MonoBehaviour
 
     IEnumerator pickNplace()
     {
-        GameObject platform = Instantiate(platformPrefab, platformPos, Quaternion.identity);
-        DetectObject platformCtr = platform.GetComponent<DetectObject>();
         while(!platformCtr.objectInPlatform)
         {
             yield return null;
         }
+        platformCtr.objectInPlatform = false;
     }
 
     IEnumerator saveData(int repetition)
@@ -264,6 +278,16 @@ public class VRPractice : MonoBehaviour
         experimentManager.Repetition = repetition+1 + "  out of " + nRepetitions + ".";
         yield return null;
     }
+
+    IEnumerator DestroyAfterSound() 
+    {   
+        // Wait until the sound is played
+        while (platformCtr.successSound.isPlaying) 
+        {
+            yield return null;
+        }
+        Destroy(platform);
+    } 
 
     void Update()
     {
