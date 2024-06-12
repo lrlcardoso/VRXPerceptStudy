@@ -19,7 +19,6 @@ public class VRPractice : MonoBehaviour
     public practiceOptions practiceType = practiceOptions.None;
 
     private GameObject bubblePrefab;
-    private PinchControl pinchControl;
     private Vector3 spawnAreaMin = new Vector3(-0.5f, 0.8f, 0.3f);
     private Vector3 spawnAreaMax = new Vector3(0.5f, 1.3f, 0.5f);
     private Material material1;
@@ -40,6 +39,7 @@ public class VRPractice : MonoBehaviour
     Vector3 platformPos; 
     // User's hand position (wrist)
     private GameObject userHand; 
+    private PinchControl pinchControl;
     // GameObject to exchange info with the ExperimentManager
     private ExperimentManager experimentManager;
     private DetectObject platformCtr;
@@ -102,12 +102,13 @@ public class VRPractice : MonoBehaviour
         bubblePrefab = Resources.Load<GameObject>("Prefabs/Bubble");
         platformPrefab = Resources.Load<GameObject>("Prefabs/platform");
         table = GameObject.Find("Scene/Table");
+
+        pinchControl.enableUpdate = true;
                 
         // Set platform position based on the table position and platform thickness
         float tableY = table.transform.position.y;
         float platformThickness = platformPrefab.transform.localScale.y;
         platformPos = new Vector3(0.0f, tableY + platformThickness, 0.14f); // Keep x and z as original
-        
         
         // Load materials from Resources folder
         material1 = Resources.Load<Material>("Materials/BubbleFinger");
@@ -173,8 +174,9 @@ public class VRPractice : MonoBehaviour
             yield return StartCoroutine(showStatus(repetition));
 
         }
-        
+
         yield return StartCoroutine(DestroyAfterSound());
+        pinchControl.enableUpdate = false;
     }
 
     IEnumerator positionHands()

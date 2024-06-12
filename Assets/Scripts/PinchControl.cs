@@ -68,6 +68,7 @@ public class PinchControl : MonoBehaviour
     private string fileName;
     private string filePath_save;
     private string filePath_load;
+    public bool enableUpdate = false;
 
 
     //Initialize the matrices that identify the system
@@ -208,49 +209,51 @@ public class PinchControl : MonoBehaviour
     }
 
     void FixedUpdate()
-    {
+    {   
+        if(enableUpdate){
+            // Update hand pose according to the current x value
+            handAnimator.SetFloat("Blend", x);
         
-        // Update hand pose according to the current x value
-        handAnimator.SetFloat("Blend", x);
 
-        GetSensorsData();
+            GetSensorsData();
 
-        SaveShoulderData();
+            SaveShoulderData();
 
-        if(experimentManager.ControlMode.ToString()=="Fingers"){
+            if(experimentManager.ControlMode.ToString()=="Fingers"){
 
-            if (m_HandSubsystem != null && m_HandSubsystem.running)
-                return;
-            
-            var handSubsystems = new List<XRHandSubsystem>();
-            SubsystemManager.GetSubsystems(handSubsystems);
+                if (m_HandSubsystem != null && m_HandSubsystem.running)
+                    return;
+                
+                var handSubsystems = new List<XRHandSubsystem>();
+                SubsystemManager.GetSubsystems(handSubsystems);
 
-            for (var i = 0; i < handSubsystems.Count; ++i)
-            {
-                var handSubsystem = handSubsystems[i];
-
-                if (handSubsystem.running)
+                for (var i = 0; i < handSubsystems.Count; ++i)
                 {
-                    m_HandSubsystem = handSubsystem;
-                    break;
+                    var handSubsystem = handSubsystems[i];
+
+                    if (handSubsystem.running)
+                    {
+                        m_HandSubsystem = handSubsystem;
+                        break;
+                    }
                 }
+
+                if (m_HandSubsystem != null)
+                    m_HandSubsystem.updatedHands += OnUpdatedHands;
+
             }
+            else if(experimentManager.ControlMode.ToString()=="Shoulder")
+            {
+                // update x value according to the shoulder position
+                X = shoulderElevation();
+                x = Convert.ToSingle(X[0][0]);
 
-            if (m_HandSubsystem != null)
-                m_HandSubsystem.updatedHands += OnUpdatedHands;
-
-        }
-        else if(experimentManager.ControlMode.ToString()=="Shoulder")
-        {
-            // update x value according to the shoulder position
-            X = shoulderElevation();
-            x = Convert.ToSingle(X[0][0]);
-
-            //Define the limits between 0 and 1
-            if(x<0)
-                x=0;
-            if(x>1)
-                x=1;
+                //Define the limits between 0 and 1
+                if(x<0)
+                    x=0;
+                if(x>1)
+                    x=1;
+            }
         }
     }
 

@@ -90,7 +90,6 @@ public class RunCCT : MonoBehaviour
     private byte[] indexHand_CCT = new byte[] { 0x36 };
     
     // Other variables
-    MonoBehaviour scriptToDisable;
     bool startRecordingFPS = false;
     int frameCount = 0;
     float deltaTime = 0.0f;
@@ -231,10 +230,6 @@ public class RunCCT : MonoBehaviour
         // Disable the control of the hands during the CCT but, before, set the prefab open         
         handAnimator = userHand.GetComponent<Animator>();
         handAnimator.SetFloat("Blend", 1.0f);
-        // Get the script component from the target GameObject
-        scriptToDisable = (MonoBehaviour)userHand.GetComponent("PinchControl");
-        // Disable the script
-        scriptToDisable.enabled = false;
         
         // Create a 2D array to store the trials matrix that stores the combinations of incongruent, congruent, CCT practice (if applicable) and nogo trials 
         if(test.ToString() == "pre")
@@ -359,7 +354,6 @@ public class RunCCT : MonoBehaviour
         }
 
         startRecordingFPS = false;
-        scriptToDisable.enabled = true;
     }
 
     IEnumerator positionHands(int trial, PositionRotationCombo[] positionRotationArray, List<int> vector)
