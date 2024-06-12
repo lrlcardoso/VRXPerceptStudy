@@ -982,7 +982,7 @@ Transform:
   m_GameObject: {fileID: 114742199}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.692, z: 0.552}
+  m_LocalPosition: {x: 0, y: 0.718, z: 0.552}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -2734,7 +2734,7 @@ Transform:
   m_GameObject: {fileID: 1187902222}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: -0.063, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0.01}
   m_LocalScale: {x: 0.2, y: 0.005, z: 0.2}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -3720,7 +3720,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7426f20d8fd9a71498c6d44d217ac9ee, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ArduinoPort: COM7
+  ArduinoPort: COM4
   ControlMode: 2
   ID: 001
   filePath: 
