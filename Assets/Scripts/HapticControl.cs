@@ -15,12 +15,15 @@ public class HapticControl : MonoBehaviour
     private byte[] data = new byte[] { 0x41, 0x41, 0x73, 0x73, 0x56, 0x01, 0x80, 0x78, 0x78, 0x45, 0x45 };
     public string msg;
     public bool msgReceived = false;
+    private ExperimentManager experimentManager;
 
     // Start is called before the first frame update
     void Start()
     {   
+        experimentManager = GameObject.Find("Experiment Manager").GetComponent<ExperimentManager>();
+
         // Setup serial communication and call program 
-        portOpen = SetupSerial("COM7");
+        portOpen = SetupSerial(experimentManager.ArduinoPort);
         if(portOpen){
             comPort.Write(data, 0, data.Length);
         }

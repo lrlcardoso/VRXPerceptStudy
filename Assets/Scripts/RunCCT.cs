@@ -5,35 +5,27 @@ using UnityEngine;
 using System.IO;
 using System.IO.Ports;
 
+public enum testOptions
+{
+    None,
+    pre,
+    post
+}
+
+public enum testTypeOptions
+{
+    None,
+    H2H,
+    H2S
+}
+
 public class RunCCT : MonoBehaviour
 {
-    // Path and file name to save the results (CSV file)
-    private string filePath = @"C:\Users\s4659771\Documents\";
-    private string fileName = "CCT.csv";
+    // Needs to be defined for each prefab and match with the name of the prefab
+    public testOptions test = testOptions.None;
+    public testTypeOptions testType = testTypeOptions.None;
 
     // Parameters for the CCT ----------------------------------------------------------
-    string test = "post"; // Can be "pre" or "post"
-    string testType = "H2S"; // Can be "H2H" (Hand-to-Hand) or "H2S" (Hand-to-Shoulder)
-
-    // WARNING: nTrials (below) needs to be a multiple of 4
-    int nTrials = 4; // Total number of trials, congruant + incongruent  
-
-    // WARNING: nTrials_noGo (below) needs to be a multiple of 2  
-    int nTrials_noGo = 2; // Number of no go trials
-
-    // The variable nTrials_targetOnly, defines the total number of trials in which no visual 
-    // distractor will happen (only vibration). They are necessary in order to accustom the 
-    // participants to the vibrotactile elevation discrimination task. The number of 
-    // nTrials_targetOnly = 10 was defined based on previous studies.
-    // Importantly, this is only added to "pre" tests, either H2S or H2H.
-    int nTrials_targetOnly = 4;  
-
-    // The variable nTrials_familiarization, defines the total number of trials (congruant + 
-    // incongruent) that will preceed the actual test. The number of 
-    // nTrials_familiarization = 20 was defined based on previous studies.
-    // Importantly, this is only added to "pre" tests, either H2S or H2H.
-    int nTrials_familiarization = 8; 
-    
     // Both, activeFrames and inactiveFrames (below) are used to control the flickering frequency. 
     // It is counted in multiples of the refresh period (around 14ms, for 72Hz). So, if both are 
     // equal to 1, it means that they will alternate as "active, inactive, active, ...", thus,
@@ -143,6 +135,13 @@ public class RunCCT : MonoBehaviour
     int nIncongruentFingerThumb;
     int nThumbNoGo;
     int nFingerNoGo;
+    string fileName;
+    string filePath;
+    string id;
+    int nTrials;
+    int nTrials_noGo;
+    int nTrials_targetOnly;
+    int nTrials_familiarization; 
 
     // TrialData class to hold each trial's data
     public class TrialData
@@ -182,7 +181,29 @@ public class RunCCT : MonoBehaviour
 
 
     void Start()
-    {        
+    {  
+        // Find the necessary GameObjects
+        userHand = GameObject.Find("Rig/Camera Offset/RightHand");
+        hapticControl = GameObject.Find("Haptic Control").GetComponent<HapticControl>();
+        experimentManager = GameObject.Find("Experiment Manager").GetComponent<ExperimentManager>();
+        fixationMark = Instantiate(Resources.Load<GameObject>("Prefabs/fixationMark"), Vector3.zero, Quaternion.identity);
+        fixationMark.SetActive(false);
+        stopwatch = Instantiate(Resources.Load<GameObject>("Models/Stopwatch/stopwatch"), Vector3.zero, Quaternion.identity);
+        stopwatch.SetActive(false);
+        userEyes = GameObject.Find("Rig/Camera Offset/Main Camera").transform;
+
+        // Get important data from ExperimentManager
+        id = experimentManager.ID;
+        filePath = experimentManager.filePath;
+        nTrials = experimentManager.nTrials;
+        nTrials_noGo = experimentManager.nTrials_noGo;
+        nTrials_targetOnly = experimentManager.nTrials_targetOnly;
+        nTrials_familiarization = experimentManager.nTrials_familiarization; 
+
+        // Define the name of the file that will be saved
+        fileName = id + "_CCT.csv";
+
+        // Prepare the file to save data
         // Ensure the directory exists
         if (!Directory.Exists(filePath))
         {
@@ -198,16 +219,6 @@ public class RunCCT : MonoBehaviour
             File.WriteAllText(filePath, "Timestamp,Test,Type,Vibration,Visual Distractor,Response,Elapsed Time,Mean Update Period\n");
         }
 
-        // Find the necessary GameObjects
-        userHand = GameObject.Find("Rig/Camera Offset/RightHand");
-        hapticControl = GameObject.Find("Haptic Control").GetComponent<HapticControl>();
-        experimentManager = GameObject.Find("Experiment Manager").GetComponent<ExperimentManager>();
-        fixationMark = Instantiate(Resources.Load<GameObject>("Prefabs/fixationMark"), Vector3.zero, Quaternion.identity);
-        fixationMark.SetActive(false);
-        stopwatch = Instantiate(Resources.Load<GameObject>("Models/Stopwatch/stopwatch"), Vector3.zero, Quaternion.identity);
-        stopwatch.SetActive(false);
-        userEyes = GameObject.Find("Rig/Camera Offset/Main Camera").transform;
-
         // Array to store position and rotation combinations
         PositionRotationCombo[] positionRotationArray = new PositionRotationCombo[numberOfPossibilities];
         // Initialize the array with desired combinations of position and rotation
@@ -222,9 +233,9 @@ public class RunCCT : MonoBehaviour
         scriptToDisable = (MonoBehaviour)userHand.GetComponent("PinchControl");
         // Disable the script
         scriptToDisable.enabled = false;
-
+        
         // Create a 2D array to store the trials matrix that stores the combinations of incongruent, congruent, CCT practice (if applicable) and nogo trials 
-        if(test == "pre")
+        if(test.ToString() == "pre")
         {
             trials = new char[2, nTrials + nTrials_noGo + nTrials_targetOnly + nTrials_familiarization];
 
@@ -316,8 +327,16 @@ public class RunCCT : MonoBehaviour
         //    Debug.Log(item);
         //}
 
-        // Start the coroutine to execute the CCT steps in sequence
-        StartCoroutine(StepsCCT(positionRotationArray, vector));
+        // Check if test and testType were defined
+        if(test.ToString() != "None" || testType.ToString() != "None")
+        {
+            // Start the coroutine to execute the CCT steps in sequence
+            StartCoroutine(StepsCCT(positionRotationArray, vector));
+        }
+        else
+        {
+            Debug.LogError("Variables test and testType must be defined.");
+        }
     }
 
     IEnumerator StepsCCT(PositionRotationCombo[] positionRotationArray, List<int> vector)
@@ -339,8 +358,6 @@ public class RunCCT : MonoBehaviour
 
         startRecordingFPS = false;
         scriptToDisable.enabled = true;
-
-        Debug.Log("CCT successfully completed!");
     }
 
     IEnumerator positionHands(int trial, PositionRotationCombo[] positionRotationArray, List<int> vector)
@@ -391,7 +408,7 @@ public class RunCCT : MonoBehaviour
     IEnumerator runTrial(int trial)
     {
         // Define the motor to vibrate in this trial
-        switch (testType)
+        switch (testType.ToString())
         {
             case "H2H":
                 switch (trials[0,trial])
@@ -665,8 +682,8 @@ public class RunCCT : MonoBehaviour
         TrialData trialData = new TrialData
         {
             Timestamp = System.DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
-            Test = test,
-            Type = testType,
+            Test = test.ToString(),
+            Type = testType.ToString(),
             Vibration = trials[0,trial],
             Visual_Distractor = trials[1,trial],
             Response = button,
@@ -680,7 +697,7 @@ public class RunCCT : MonoBehaviour
             sw.WriteLine(trialData.ToString());
         }
 
-        if(test == "pre")
+        if(test.ToString() == "pre")
         {
 
             if(trial<nTrials_targetOnly)

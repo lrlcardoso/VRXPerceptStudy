@@ -3151,7 +3151,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1564131157
 Transform:
   m_ObjectHideFlags: 0
@@ -3720,12 +3720,29 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7426f20d8fd9a71498c6d44d217ac9ee, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ArduinoPort: COM7
   ControlMode: 2
   ID: 001
+  filePath: 
+  nTrials: 0
+  nTrials_noGo: 0
+  nTrials_targetOnly: 0
+  nTrials_familiarization: 0
+  nRepetitions_primaryPrac: 0
+  nRepetitions_refresherPrac: 0
+  stages:
+  - {fileID: 8796320026850318426, guid: f3e36a5b9f632e54697186177fba7177, type: 3}
+  - {fileID: 8796320026850318426, guid: 0f64a5349ba87bb408b92555d60c2b12, type: 3}
+  - {fileID: 2829836504274827119, guid: f3b50b5a3f9872a4f81d83ae787d7625, type: 3}
+  - {fileID: 8796320026850318426, guid: 66aaea5b502e01e48b62d6e72d6a03f6, type: 3}
+  - {fileID: 2829836504274827119, guid: 4cf771179bf0c9f4abb2d5ed330da50b, type: 3}
+  - {fileID: 8796320026850318426, guid: d8bdd550270d03b4994adf004e7d97f5, type: 3}
+  CurrentStage: 
   TargetOnlyTrials: 
   FamiliarizationTrials: 
   CCTTrials: 
   NoGoTrials: 
+  Repetition: 
 --- !u!1 &1780899735
 GameObject:
   m_ObjectHideFlags: 0
@@ -4201,7 +4218,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1934401603
 Transform:
   m_ObjectHideFlags: 0

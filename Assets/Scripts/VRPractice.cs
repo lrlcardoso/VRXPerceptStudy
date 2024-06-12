@@ -5,8 +5,19 @@ using UnityEngine;
 using System.IO;
 using System.IO.Ports;
 
+public enum practiceOptions
+{
+    None,
+    primary,
+    refresher
+}
+
 public class VRPractice : MonoBehaviour
 {
+
+    // Needs to be defined for each prefab and match with the name of the prefab
+    public practiceOptions practiceType = practiceOptions.None;
+
     private GameObject bubblePrefab;
     private PinchControl pinchControl;
     private Vector3 spawnAreaMin = new Vector3(-0.5f, 0.8f, 0.3f);
@@ -16,17 +27,19 @@ public class VRPractice : MonoBehaviour
     private GameObject indexSphere; // Reference to the index finger sphere
     private GameObject thumbSphere; // Reference to the thumb sphere
     public bool isAble2pinch = false;
-
-    // new
-    // Path and file name to save the results (CSV file)
-    private string filePath = @"C:\Users\s4659771\Documents\";
-    private string fileName = "VRPractice.csv";
-    int nRepetitions = 4;
+    int nRepetitions;
+    string id;
+    string filePath;
+    string fileName;
+    int nRepetitions_primaryPrac;
+    int nRepetitions_refresherPrac;
     Vector3 handIniPos = new Vector3(0.06098f,0.85803f,0.20876f); 
     Quaternion handIniRot = Quaternion.Euler(309.02655f,349.61621f,283.25412f); 
     Vector3 platformPos = new Vector3(0.0f,0.7f,0.14f); 
     // User's hand position (wrist)
     private GameObject userHand; 
+    // GameObject to exchange info with the ExperimentManager
+    private ExperimentManager experimentManager;
     private float detectionRadius = 0.1f; // Radius for detecting proximity
     private float requiredStayTime = 1f; // Time required to stay in position to trigger color change
     private float timeInPosition = 0f; // Variable to counts the time that stays in position
@@ -41,18 +54,30 @@ public class VRPractice : MonoBehaviour
     public class RepetitionData
     {
         public string Timestamp { get; set; }
+        public string PracticeType { get; set; }
         public int Repetition { get; set; }
         public string Stage { get; set; }
         public float StartTime { get; set; }
         public float EndTime { get; set; }
         public override string ToString()
         {
-            return $"{Timestamp},{Repetition},{Stage},{StartTime},{EndTime}";
+            return $"{Timestamp},{PracticeType},{Repetition},{Stage},{StartTime},{EndTime}";
         }
     }
 
     private void Start()
     {
+        // Get important data from ExperimentManager
+        experimentManager = GameObject.Find("Experiment Manager").GetComponent<ExperimentManager>();
+        id = experimentManager.ID;
+        filePath = experimentManager.filePath;
+        nRepetitions_primaryPrac = experimentManager.nRepetitions_primaryPrac;
+        nRepetitions_refresherPrac = experimentManager.nRepetitions_refresherPrac;
+
+        // Define the name of the file that will be saved
+        fileName = id + "_PracticeTimes.csv";
+
+        // Prepare the file to save data
         // Ensure the directory exists
         if (!Directory.Exists(filePath))
         {
@@ -65,7 +90,7 @@ public class VRPractice : MonoBehaviour
         // Ensure the file has headers if it's new
         if (!File.Exists(filePath))
         {
-            File.WriteAllText(filePath, "Timestamp, Repetition, Stage, Start Time, End Time\n");
+            File.WriteAllText(filePath, "Timestamp, Practice Type, Repetition, Stage, Start Time, End Time\n");
         }
 
         // Find the necessary GameObjects
@@ -82,10 +107,26 @@ public class VRPractice : MonoBehaviour
         indexSphere = GameObject.Find("Rig/Camera Offset/RightHand/R_Wrist/R_IndexMetacarpal/R_IndexProximal/R_IndexIntermediate/R_IndexDistal/R_IndexTip/IndexSphere");
         thumbSphere = GameObject.Find("Rig/Camera Offset/RightHand/R_Wrist/R_ThumbMetacarpal/R_ThumbProximal/R_ThumbDistal/R_ThumbTip/ThumbSphere");
 
-        StartCoroutine(StepsVRPractice());
+        if(practiceType.ToString()=="primary")
+        {
+            nRepetitions = nRepetitions_primaryPrac;
+            experimentManager.Repetition = "0  out of " + nRepetitions + ".";
+            StartCoroutine(runVRPractice());
+        }
+        else if(practiceType.ToString()=="refresher")
+        {
+            nRepetitions = nRepetitions_refresherPrac;
+            experimentManager.Repetition = "0  out of " + nRepetitions + ".";
+            StartCoroutine(runVRPractice());
+        }
+        else
+        {
+            Debug.LogError("Variable practiceType must be defined.");
+        }
+
     }
 
-    IEnumerator StepsVRPractice()
+    IEnumerator runVRPractice()
     {
 
         for (int repetition = 0; repetition < nRepetitions; repetition++){
@@ -116,9 +157,9 @@ public class VRPractice : MonoBehaviour
             endTime = Time.time;
 
             yield return StartCoroutine(saveData(repetition));
-        }
 
-        Debug.Log("VR Practice completed!");
+            yield return StartCoroutine(showStatus(repetition));
+        }
     }
 
     IEnumerator positionHands()
@@ -202,7 +243,8 @@ public class VRPractice : MonoBehaviour
         RepetitionData repetitionData = new RepetitionData
         {
             Timestamp = System.DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
-            Repetition = repetition,
+            PracticeType = practiceType.ToString(),
+            Repetition = repetition+1,
             Stage = stage,
             StartTime = startTime,
             EndTime = endTime
@@ -214,6 +256,12 @@ public class VRPractice : MonoBehaviour
             sw.WriteLine(repetitionData.ToString());
         }
 
+        yield return null;
+    }
+
+    IEnumerator showStatus(int repetition)
+    {
+        experimentManager.Repetition = repetition+1 + "  out of " + nRepetitions + ".";
         yield return null;
     }
 
