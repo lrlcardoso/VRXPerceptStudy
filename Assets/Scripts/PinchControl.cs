@@ -214,7 +214,6 @@ public class PinchControl : MonoBehaviour
             // Update hand pose according to the current x value
             handAnimator.SetFloat("Blend", x);
         
-
             GetSensorsData();
 
             SaveShoulderData();
@@ -408,17 +407,6 @@ public class PinchControl : MonoBehaviour
 
         Debug.Log("Delsys is ready to be use!");
     }
-
-    //void OnApplicationQuit()
-    //{
-        //if(experimentManager.ControlMode.ToString()=="Shoulder")
-        //{
-            //response = SendCommand(COMMAND_STOP);
-            //Debug.Log("COMMAND: " + COMMAND_STOP);
-            //Debug.Log("RESPONSE: " + response);
-            //commandSocket.Close();
-        //}
-    //} 
 
     void OnDestroy()
     {
