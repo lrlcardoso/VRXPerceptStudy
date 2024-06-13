@@ -22,6 +22,7 @@ using System.Text;
 using System.Net.Sockets;
 using System.Threading;
 using UnityEngine.XR.Hands;
+using System.Diagnostics;
 
 public class PinchControl : MonoBehaviour
 {
@@ -93,20 +94,8 @@ public class PinchControl : MonoBehaviour
         new double[] { 0.0f}
     };
 
-    private double[][] z = new double[16][]
+    private double[][] z = new double[4][]
     {
-        new double[] { 0.0f},
-        new double[] { 0.0f},
-        new double[] { 0.0f},
-        new double[] { 0.0f},
-        new double[] { 0.0f},
-        new double[] { 0.0f},
-        new double[] { 0.0f},
-        new double[] { 0.0f},
-        new double[] { 0.0f},
-        new double[] { 0.0f},
-        new double[] { 0.0f},
-        new double[] { 0.0f},
         new double[] { 0.0f},
         new double[] { 0.0f},
         new double[] { 0.0f},
@@ -143,6 +132,35 @@ public class PinchControl : MonoBehaviour
         }
     }
 
+    double accx_1;
+    double accy_1; 
+    double accz_1;
+    double accx_2;
+    double accy_2; 
+    double accz_2;   
+    double gyrx_1;
+    double gyry_1; 
+    double gyrz_1;
+    double gyrx_2;
+    double gyry_2; 
+    double gyrz_2;
+
+    double dt = 0.02;
+
+    double alpha = 0.75;
+
+    double acc_pitch_1;
+    double acc_roll_1;
+    double acc_pitch_2;
+    double acc_roll_2;
+
+    double pitch_1 = 0;
+    double roll_1 = 0;
+    double pitch_2 = 0;
+    double roll_2 = 0;
+    private static Stopwatch stopwatch = new Stopwatch();
+    private static bool isFirstEntry = true;
+
     void Start()
     {
         experimentManager = GameObject.Find("Experiment Manager").GetComponent<ExperimentManager>();
@@ -173,7 +191,7 @@ public class PinchControl : MonoBehaviour
         
         if(experimentManager.ControlMode.ToString()=="Shoulder")
         {
-            filePath_load = experimentManager.filePath + @"\" + id + @"\0_calibrationMatrices";
+            filePath_load = experimentManager.filePath + @"\" + id + @"\0_calibrationMatrices\";
 
             try{
                 // READ ALL MATRIX FOR THE KALMAN FILTER
@@ -192,7 +210,7 @@ public class PinchControl : MonoBehaviour
             }
             catch (Exception)
             {
-                Debug.LogError("The folder was not well specified.");
+                UnityEngine.Debug.LogError("The folder was not well specified.");
                 return;
             }
 
@@ -202,13 +220,13 @@ public class PinchControl : MonoBehaviour
         }
         else if(experimentManager.ControlMode.ToString()=="None")
         {
-            Debug.Log("No control mode was selected.");
+            UnityEngine.Debug.Log("No control mode was selected.");
             Application.Quit();
         }
 
     }
 
-    void FixedUpdate()
+    void Update()
     {   
         if(enableUpdate){
             // Update hand pose according to the current x value
@@ -245,7 +263,11 @@ public class PinchControl : MonoBehaviour
             {
                 // update x value according to the shoulder position
                 X = shoulderElevation();
-                x = Convert.ToSingle(X[0][0]);
+                //UnityEngine.Debug.Log(X[0][0] + ", " + X[1][0]);
+                x = Convert.ToSingle(X[0][0])-0.15f;
+                //x = Convert.ToSingle(X[0][0]);
+
+                //UnityEngine.Debug.Log(x);
 
                 //Define the limits between 0 and 1
                 if(x<0)
@@ -259,28 +281,55 @@ public class PinchControl : MonoBehaviour
     private void GetSensorsData()
     {
         // build vector z (feature vector) - same structure used in Matlab
-        z[0][0] =  accXDataList[sensors[0]-1][accXDataList[sensors[0]-1].Count - 1];
-        z[1][0] =  accYDataList[sensors[0]-1][accYDataList[sensors[0]-1].Count - 1]; 
-        z[2][0] =  accZDataList[sensors[0]-1][accZDataList[sensors[0]-1].Count - 1];
-        z[3][0] =  accXDataList[sensors[1]-1][accXDataList[sensors[1]-1].Count - 1];
-        z[4][0] =  accYDataList[sensors[1]-1][accYDataList[sensors[1]-1].Count - 1]; 
-        z[5][0] =  accZDataList[sensors[1]-1][accZDataList[sensors[1]-1].Count - 1];   
-        z[6][0] =  gyrXDataList[sensors[0]-1][gyrXDataList[sensors[0]-1].Count - 1];
-        z[7][0] =  gyrYDataList[sensors[0]-1][gyrYDataList[sensors[0]-1].Count - 1]; 
-        z[8][0] =  gyrZDataList[sensors[0]-1][gyrZDataList[sensors[0]-1].Count - 1];
-        z[9][0] =  gyrXDataList[sensors[1]-1][gyrXDataList[sensors[1]-1].Count - 1];
-        z[10][0] =  gyrYDataList[sensors[1]-1][gyrYDataList[sensors[1]-1].Count - 1]; 
-        z[11][0] =  gyrZDataList[sensors[1]-1][gyrZDataList[sensors[1]-1].Count - 1];
-        accelX = z[0][0];
-        accelY = z[1][0];
-        accelZ = z[2][0];
-        z[12][0] = Math.Atan2(-accelX, Math.Sqrt((accelY*accelY) + (accelZ*accelZ)))*(180/Math.PI);
-        z[13][0] = Math.Atan2(accelY, Math.Sqrt((accelX*accelX) + (accelZ*accelZ)))*(180/Math.PI);
-        accelX = z[3][0];
-        accelY = z[4][0];
-        accelZ = z[5][0];
-        z[14][0] = Math.Atan2(-accelX, Math.Sqrt((accelY*accelY) + (accelZ*accelZ)))*(180/Math.PI);
-        z[15][0] = Math.Atan2(accelY, Math.Sqrt((accelX*accelX) + (accelZ*accelZ)))*(180/Math.PI);
+        accx_1 = accXDataList[sensors[0]-1][accXDataList[sensors[0]-1].Count - 1]*9.81;
+        accy_1 = accYDataList[sensors[0]-1][accYDataList[sensors[0]-1].Count - 1]*9.81; 
+        accz_1 = accZDataList[sensors[0]-1][accZDataList[sensors[0]-1].Count - 1]*9.81;
+        accx_2 =  accXDataList[sensors[1]][accXDataList[sensors[1]].Count - 1]*9.81;
+        accy_2 =  accYDataList[sensors[1]][accYDataList[sensors[1]].Count - 1]*9.81; 
+        accz_2 =  accZDataList[sensors[1]][accZDataList[sensors[1]].Count - 1]*9.81;   
+        gyrx_1 =  gyrXDataList[sensors[0]-1][gyrXDataList[sensors[0]-1].Count - 1];
+        gyry_1 =  gyrYDataList[sensors[0]-1][gyrYDataList[sensors[0]-1].Count - 1]; 
+        gyrz_1 =  gyrZDataList[sensors[0]-1][gyrZDataList[sensors[0]-1].Count - 1];
+        gyrx_2 =  gyrXDataList[sensors[1]][gyrXDataList[sensors[1]].Count - 1];
+        gyry_2 =  gyrYDataList[sensors[1]][gyrYDataList[sensors[1]].Count - 1]; 
+        gyrz_2 =  gyrZDataList[sensors[1]][gyrZDataList[sensors[1]].Count - 1];
+
+        if (isFirstEntry)
+        {
+            // Initialize the stopwatch on the first entry
+            stopwatch.Start();
+            dt = 0.02; // Initial sample time
+            isFirstEntry = false;
+        }
+        else
+        {
+            // Get the elapsed time and reset the stopwatch
+            dt = stopwatch.Elapsed.TotalSeconds;
+            stopwatch.Restart();
+        }
+
+        // Sample time
+        //dt = 0.02;
+
+        // Calculate pitch and roll from accelerometer
+        acc_pitch_1 = Math.Atan2(-accx_1, Math.Sqrt(accy_1 * accy_1 + accz_1 * accz_1)) * (180/Math.PI);
+        acc_roll_1 = Math.Atan2(accy_1, accz_1) * (180/Math.PI);
+        acc_pitch_2 = Math.Atan2(-accx_2, Math.Sqrt(accy_2 * accy_2 + accz_2 * accz_2)) * (180/Math.PI);
+        acc_roll_2 = Math.Atan2(accy_2, accz_2) * (180/Math.PI);
+        
+        // Apply complementary filter for pitch and roll
+        pitch_1 = alpha * (pitch_1 + gyry_1 * dt) + (1 - alpha) * acc_pitch_1;
+        roll_1 = alpha * (roll_1 + gyrx_1 * dt) + (1 - alpha) * acc_roll_1;
+        pitch_2 = alpha * (pitch_2 + gyry_2 * dt) + (1 - alpha) * acc_pitch_2;
+        roll_2 = alpha * (roll_2 + gyrx_2 * dt) + (1 - alpha) * acc_roll_2;
+
+        z[0][0] = pitch_1;
+        z[1][0] = roll_1;
+        z[2][0] = pitch_2;
+        z[3][0] = roll_2;
+
+        //UnityEngine.Debug.Log(pitch_1 + ", " + roll_1 + ", " + pitch_2 + ", " + roll_2);
+
     }
 
     private void SaveShoulderData()
@@ -289,18 +338,18 @@ public class PinchControl : MonoBehaviour
         {
             Timestamp = System.DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
             Microseconds = (Time.time),
-            Sensor1_Acc_x = z[0][0],
-            Sensor1_Acc_y = z[1][0],
-            Sensor1_Acc_z = z[2][0],
-            Sensor1_Gyr_x = z[6][0],
-            Sensor1_Gyr_y = z[7][0],
-            Sensor1_Gyr_z = z[8][0],
-            Sensor2_Acc_x = z[3][0],
-            Sensor2_Acc_y = z[4][0],
-            Sensor2_Acc_z = z[5][0],
-            Sensor2_Gyr_x = z[9][0],
-            Sensor2_Gyr_y = z[10][0],
-            Sensor2_Gyr_z = z[11][0]
+            Sensor1_Acc_x = accx_1,
+            Sensor1_Acc_y = accy_1,
+            Sensor1_Acc_z = accz_1,
+            Sensor1_Gyr_x = gyrx_1,
+            Sensor1_Gyr_y = gyry_1,
+            Sensor1_Gyr_z = gyrz_1,
+            Sensor2_Acc_x = accx_2,
+            Sensor2_Acc_y = accy_2,
+            Sensor2_Acc_z = accz_2,
+            Sensor2_Gyr_x = gyrx_2,
+            Sensor2_Gyr_y = gyry_2,
+            Sensor2_Gyr_z = gyrz_2
         };
 
         using (StreamWriter sw = new StreamWriter(filePath_save, true))
@@ -336,7 +385,7 @@ public class PinchControl : MonoBehaviour
 
     private void setupDelsys() 
     {
-        Debug.Log("Delsys setup is running...");
+        UnityEngine.Debug.Log("Delsys setup is running...");
         try
         {
             //Establish TCP/IP connection to server using URL entered
@@ -346,33 +395,33 @@ public class PinchControl : MonoBehaviour
             commandStream = commandSocket.GetStream();
             commandReader = new StreamReader(commandStream, Encoding.ASCII);
             commandWriter = new StreamWriter(commandStream, Encoding.ASCII);
-            Debug.Log(commandReader.ReadLine());
+            UnityEngine.Debug.Log(commandReader.ReadLine());
             commandReader.ReadLine();   //get extra line terminator
             connected = true;
         }
         catch (Exception)
         {
             //connection failed, display error message
-            Debug.LogError("Could not connect.");
+            UnityEngine.Debug.LogError("Could not connect.");
             return;
         }
 
-        string command = "UPSAMPLE OFF";
-        response = SendCommand(command);
-        Debug.Log("COMMAND: " + command);
-        Debug.Log("RESPONSE: " + response);
+        //string command = "UPSAMPLE OFF";
+        //response = SendCommand(command);
+        //UnityEngine.Debug.Log("COMMAND: " + command);
+        //UnityEngine.Debug.Log("RESPONSE: " + response);
 
         for (int i = 0; i < 16; i++)
         {
-            command = "SENSOR " + (i+1) + " ACTIVE?";
+            string command = "SENSOR " + (i+1) + " ACTIVE?";
             response = SendCommand(command);
             if(response == "YES")
             {
                 sensors.Add(i+1);
-                Debug.Log("SENSOR " + (i+1) + " DETECTED");
-                command = "SENSOR " + (i+1) + " SETMODE 50";
+                UnityEngine.Debug.Log("SENSOR " + (i+1) + " DETECTED");
+                command = "SENSOR " + (i+1) + " SETMODE 173";
                 response = SendCommand(command);
-                Debug.Log(response);
+                UnityEngine.Debug.Log(response);
             }
         }
 
@@ -400,12 +449,12 @@ public class PinchControl : MonoBehaviour
 
         //Send start command to server to stream data
         response = SendCommand(COMMAND_START);
-        Debug.Log("COMMAND: " + COMMAND_START);
-        Debug.Log("RESPONSE: " + response);   
+        UnityEngine.Debug.Log("COMMAND: " + COMMAND_START);
+        UnityEngine.Debug.Log("RESPONSE: " + response);   
 
         Thread.Sleep(1000); //wait 1s to ensure the buffer is full enough
 
-        Debug.Log("Delsys is ready to be use!");
+        UnityEngine.Debug.Log("Delsys is ready to be use!");
     }
 
     void OnDestroy()
@@ -413,8 +462,8 @@ public class PinchControl : MonoBehaviour
         //if(experimentManager.ControlMode.ToString()=="Shoulder")
         //{
             response = SendCommand(COMMAND_STOP);
-            Debug.Log("COMMAND: " + COMMAND_STOP);
-            Debug.Log("RESPONSE: " + response);
+            UnityEngine.Debug.Log("COMMAND: " + COMMAND_STOP);
+            UnityEngine.Debug.Log("RESPONSE: " + response);
             commandSocket.Close();
         //}
     } 
@@ -436,7 +485,7 @@ public class PinchControl : MonoBehaviour
             commandReader.ReadLine();   //get extra line terminator
         }
         else
-            Debug.Log("Not connected.");
+            UnityEngine.Debug.Log("Not connected.");
         return response;    //return the response we got
     }
 
@@ -455,14 +504,14 @@ public class PinchControl : MonoBehaviour
                 //Demultiplex the data for all sensors that were detected. Usually, it will be two.
                 for (int sn = 0; sn < 16; ++sn)
                 {
-                    if((sn==(sensors[0]-1)) || sn==(sensors[1]-1))
+                    if((sn==(sensors[0]-1)) || sn==(sensors[1]))
                     {
-                        accXDataList[sn].Add(reader.ReadSingle()*9.81);
-                        accYDataList[sn].Add(reader.ReadSingle()*9.81);
-                        accZDataList[sn].Add(reader.ReadSingle()*9.81);
-                        gyrXDataList[sn].Add(reader.ReadSingle()*Math.PI/180);
-                        gyrYDataList[sn].Add(reader.ReadSingle()*Math.PI/180);
-                        gyrZDataList[sn].Add(reader.ReadSingle()*Math.PI/180);
+                        accXDataList[sn].Add(reader.ReadSingle());
+                        accYDataList[sn].Add(reader.ReadSingle());
+                        accZDataList[sn].Add(reader.ReadSingle());
+                        gyrXDataList[sn].Add(reader.ReadSingle());
+                        gyrYDataList[sn].Add(reader.ReadSingle());
+                        gyrZDataList[sn].Add(reader.ReadSingle());
                         // the following three lines read the buffer, just to move the pointer. They are responsible to read the magnetometer, that is not available in the Avanty type sensors
                         reader.ReadSingle();
                         reader.ReadSingle();
