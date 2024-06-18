@@ -43,7 +43,7 @@ public class VRPractice : MonoBehaviour
     string fileName;
     int nRepetitions_primaryPrac;
     int nRepetitions_refresherPrac;
-    Vector3 handIniPos = new Vector3(0.06098f,0.85803f,0.20876f); 
+    Vector3 handIniPos = new Vector3(0.06098f,0.14f,0.20876f); 
     Quaternion handIniRot = Quaternion.Euler(309.02655f,349.61621f,283.25412f); 
     Vector3 platformPos; 
     // User's hand position (wrist)
@@ -192,7 +192,8 @@ public class VRPractice : MonoBehaviour
 
     IEnumerator positionHands()
     {
-        handIni = Instantiate(Resources.Load<GameObject>("Prefabs/Close_Pinch"), handIniPos, handIniRot);
+        Vector3 newHandIniPos = new Vector3(handIniPos.x, handIniPos.y + experimentManager.TableHeight, handIniPos.z); // adjust position according to table height
+        handIni = Instantiate(Resources.Load<GameObject>("Prefabs/Close_Pinch"), newHandIniPos, handIniRot);
         handIni.GetComponentInChildren<SkinnedMeshRenderer>().material = (Material)Resources.Load("Materials/Clear", typeof(Material));
 
         timeInPosition = 0f;

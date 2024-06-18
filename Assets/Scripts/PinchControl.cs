@@ -95,8 +95,10 @@ public class PinchControl : MonoBehaviour
         new double[] { 0.0f}
     };
 
-    private double[][] z = new double[4][]
+    private double[][] z = new double[6][]
     {
+        new double[] { 0.0f},
+        new double[] { 0.0f},
         new double[] { 0.0f},
         new double[] { 0.0f},
         new double[] { 0.0f},
@@ -126,10 +128,16 @@ public class PinchControl : MonoBehaviour
         public double Sensor2_Gyr_x { get; set; }
         public double Sensor2_Gyr_y { get; set; }
         public double Sensor2_Gyr_z { get; set; }
+        public double Sensor3_Acc_x { get; set; }
+        public double Sensor3_Acc_y { get; set; }
+        public double Sensor3_Acc_z { get; set; }
+        public double Sensor3_Gyr_x { get; set; }
+        public double Sensor3_Gyr_y { get; set; }
+        public double Sensor3_Gyr_z { get; set; }
 
         public override string ToString()
         {
-            return $"{Timestamp},{Microseconds},{Sensor1_Acc_x},{Sensor1_Acc_y},{Sensor1_Acc_z},{Sensor1_Gyr_x},{Sensor1_Gyr_y},{Sensor1_Gyr_z},{Sensor2_Acc_x},{Sensor2_Acc_y},{Sensor2_Acc_z},{Sensor2_Gyr_x},{Sensor2_Gyr_y},{Sensor2_Gyr_z}";
+            return $"{Timestamp},{Microseconds},{Sensor1_Acc_x},{Sensor1_Acc_y},{Sensor1_Acc_z},{Sensor1_Gyr_x},{Sensor1_Gyr_y},{Sensor1_Gyr_z},{Sensor2_Acc_x},{Sensor2_Acc_y},{Sensor2_Acc_z},{Sensor2_Gyr_x},{Sensor2_Gyr_y},{Sensor2_Gyr_z},{Sensor3_Acc_x},{Sensor3_Acc_y},{Sensor3_Acc_z},{Sensor3_Gyr_x},{Sensor3_Gyr_y},{Sensor3_Gyr_z}";
         }
     }
 
@@ -138,13 +146,19 @@ public class PinchControl : MonoBehaviour
     double accz_1;
     double accx_2;
     double accy_2; 
-    double accz_2;   
+    double accz_2;  
+    double accx_3;
+    double accy_3; 
+    double accz_3; 
     double gyrx_1;
     double gyry_1; 
     double gyrz_1;
     double gyrx_2;
     double gyry_2; 
     double gyrz_2;
+    double gyrx_3;
+    double gyry_3; 
+    double gyrz_3;
 
     double dt = 0.02;
 
@@ -154,11 +168,15 @@ public class PinchControl : MonoBehaviour
     double acc_roll_1;
     double acc_pitch_2;
     double acc_roll_2;
+    double acc_pitch_3;
+    double acc_roll_3;
 
     double pitch_1 = 0;
     double roll_1 = 0;
     double pitch_2 = 0;
     double roll_2 = 0;
+    double pitch_3 = 0;
+    double roll_3 = 0;
     private static Stopwatch stopwatch = new Stopwatch();
     private static bool isFirstEntry = true;
 
@@ -184,7 +202,7 @@ public class PinchControl : MonoBehaviour
         // Ensure the file has headers if it's new
         if (!File.Exists(filePath_save))
         {
-            File.WriteAllText(filePath_save, "Timestamp,Acquisition_Time(ms),Sensor1_Acc_x,Sensor1_Acc_y,Sensor1_Acc_z,Sensor1_Gyr_x,Sensor1_Gyr_y,Sensor1_Gyr_z,Sensor2_Acc_x,Sensor2_Acc_y,Sensor2_Acc_z,Sensor2_Gyr_x,Sensor2_Gyr_y,Sensor2_Gyr_z\n");
+            File.WriteAllText(filePath_save, "Timestamp,Acquisition_Time(ms),Sensor1_Acc_x,Sensor1_Acc_y,Sensor1_Acc_z,Sensor1_Gyr_x,Sensor1_Gyr_y,Sensor1_Gyr_z,Sensor2_Acc_x,Sensor2_Acc_y,Sensor2_Acc_z,Sensor2_Gyr_x,Sensor2_Gyr_y,Sensor2_Gyr_z,Sensor3_Acc_x,Sensor3_Acc_y,Sensor3_Acc_z,Sensor3_Gyr_x,Sensor3_Gyr_y,Sensor3_Gyr_z\n");
         }
 
         //call function to do the set up with the Delsys base
@@ -265,8 +283,8 @@ public class PinchControl : MonoBehaviour
                 // update x value according to the shoulder position
                 X = shoulderElevation();
                 //UnityEngine.Debug.Log(X[0][0] + ", " + X[1][0]);
+                //x = (Convert.ToSingle(X[0][0])-0.1f)*1.2f;
                 x = Convert.ToSingle(X[0][0])-0.15f;
-                //x = Convert.ToSingle(X[0][0]);
 
                 //UnityEngine.Debug.Log(x);
 
@@ -287,13 +305,19 @@ public class PinchControl : MonoBehaviour
         accz_1 = accZDataList[sensors[0]-1][accZDataList[sensors[0]-1].Count - 1]*9.81;
         accx_2 =  accXDataList[sensors[1]][accXDataList[sensors[1]].Count - 1]*9.81;
         accy_2 =  accYDataList[sensors[1]][accYDataList[sensors[1]].Count - 1]*9.81; 
-        accz_2 =  accZDataList[sensors[1]][accZDataList[sensors[1]].Count - 1]*9.81;   
+        accz_2 =  accZDataList[sensors[1]][accZDataList[sensors[1]].Count - 1]*9.81; 
+        accx_3 =  accXDataList[sensors[2]+1][accXDataList[sensors[2]+1].Count - 1]*9.81;
+        accy_3 =  accYDataList[sensors[2]+1][accYDataList[sensors[2]+1].Count - 1]*9.81; 
+        accz_3 =  accZDataList[sensors[2]+1][accZDataList[sensors[2]+1].Count - 1]*9.81;    
         gyrx_1 =  gyrXDataList[sensors[0]-1][gyrXDataList[sensors[0]-1].Count - 1];
         gyry_1 =  gyrYDataList[sensors[0]-1][gyrYDataList[sensors[0]-1].Count - 1]; 
         gyrz_1 =  gyrZDataList[sensors[0]-1][gyrZDataList[sensors[0]-1].Count - 1];
         gyrx_2 =  gyrXDataList[sensors[1]][gyrXDataList[sensors[1]].Count - 1];
         gyry_2 =  gyrYDataList[sensors[1]][gyrYDataList[sensors[1]].Count - 1]; 
         gyrz_2 =  gyrZDataList[sensors[1]][gyrZDataList[sensors[1]].Count - 1];
+        gyrx_3 =  gyrXDataList[sensors[2]+1][gyrXDataList[sensors[2]+1].Count - 1];
+        gyry_3 =  gyrYDataList[sensors[2]+1][gyrYDataList[sensors[2]+1].Count - 1]; 
+        gyrz_3 =  gyrZDataList[sensors[2]+1][gyrZDataList[sensors[2]+1].Count - 1];
 
         if (isFirstEntry)
         {
@@ -317,19 +341,25 @@ public class PinchControl : MonoBehaviour
         acc_roll_1 = Math.Atan2(accy_1, accz_1) * (180/Math.PI);
         acc_pitch_2 = Math.Atan2(-accx_2, Math.Sqrt(accy_2 * accy_2 + accz_2 * accz_2)) * (180/Math.PI);
         acc_roll_2 = Math.Atan2(accy_2, accz_2) * (180/Math.PI);
+        acc_pitch_3 = Math.Atan2(-accx_3, Math.Sqrt(accy_3 * accy_3 + accz_3 * accz_3)) * (180/Math.PI);
+        acc_roll_3 = Math.Atan2(accy_3, accz_3) * (180/Math.PI);
         
         // Apply complementary filter for pitch and roll
         pitch_1 = alpha * (pitch_1 + gyry_1 * dt) + (1 - alpha) * acc_pitch_1;
         roll_1 = alpha * (roll_1 + gyrx_1 * dt) + (1 - alpha) * acc_roll_1;
         pitch_2 = alpha * (pitch_2 + gyry_2 * dt) + (1 - alpha) * acc_pitch_2;
         roll_2 = alpha * (roll_2 + gyrx_2 * dt) + (1 - alpha) * acc_roll_2;
+        pitch_3 = alpha * (pitch_3 + gyry_3 * dt) + (1 - alpha) * acc_pitch_3;
+        roll_3 = alpha * (roll_3 + gyrx_3 * dt) + (1 - alpha) * acc_roll_3;
 
         z[0][0] = pitch_1;
         z[1][0] = roll_1;
         z[2][0] = pitch_2;
         z[3][0] = roll_2;
+        z[4][0] = pitch_3;
+        z[5][0] = roll_3;
 
-        //UnityEngine.Debug.Log(pitch_1 + ", " + roll_1 + ", " + pitch_2 + ", " + roll_2);
+        //UnityEngine.Debug.Log(pitch_1 + ", " + roll_1 + ", " + pitch_2 + ", " + roll_2 + ", " + pitch_3 + ", " + roll_3);
 
     }
 
@@ -350,7 +380,13 @@ public class PinchControl : MonoBehaviour
             Sensor2_Acc_z = accz_2,
             Sensor2_Gyr_x = gyrx_2,
             Sensor2_Gyr_y = gyry_2,
-            Sensor2_Gyr_z = gyrz_2
+            Sensor2_Gyr_z = gyrz_2,
+            Sensor3_Acc_x = accx_3,
+            Sensor3_Acc_y = accy_3,
+            Sensor3_Acc_z = accz_3,
+            Sensor3_Gyr_x = gyrx_3,
+            Sensor3_Gyr_y = gyry_3,
+            Sensor3_Gyr_z = gyrz_3
         };
 
         using (StreamWriter sw = new StreamWriter(filePath_save, true))
@@ -508,7 +544,7 @@ public class PinchControl : MonoBehaviour
                 //Demultiplex the data for all sensors that were detected. Usually, it will be two.
                 for (int sn = 0; sn < 16; ++sn)
                 {
-                    if((sn==(sensors[0]-1)) || sn==(sensors[1]))
+                    if((sn==(sensors[0]-1)) || sn==(sensors[1]) || sn==(sensors[2]+1))
                     {
                         accXDataList[sn].Add(reader.ReadSingle());
                         accYDataList[sn].Add(reader.ReadSingle());
