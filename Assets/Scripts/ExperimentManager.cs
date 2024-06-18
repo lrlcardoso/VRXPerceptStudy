@@ -192,7 +192,7 @@ public class ExperimentManager : MonoBehaviour
         }
         yield return new WaitForSeconds(2f);
 
-        //Recenter();
+        Recenter();
     }
 
     IEnumerator WaitToCalibrate()
@@ -242,13 +242,13 @@ public class ExperimentManager : MonoBehaviour
     //    Recenter();
     //}
     
-    void Update()
-    {
-        if (Input.GetKeyDown("space"))
-        {
-            Recenter(); 
-        }
-    }
+    //void Update()
+    //{
+    //    if (Input.GetKeyDown("space"))
+    //    {
+    //        Recenter(); 
+    //    }
+    //}
 
     public void nextStage()
     {
