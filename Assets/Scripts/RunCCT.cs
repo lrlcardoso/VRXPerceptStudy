@@ -356,7 +356,10 @@ public class RunCCT : MonoBehaviour
 
         startRecordingFPS = false;
 
-        //experimentManager.nextStage();
+        if(!(testType.ToString() == "H2H" && test.ToString() == "pre"))
+        {
+            experimentManager.nextStage();
+        }
     }
 
     IEnumerator positionHands(int trial, PositionRotationCombo[] positionRotationArray, List<int> vector)

@@ -11,10 +11,11 @@ public enum practiceOptions
     primary,
     refresher
 }
-
+[RequireComponent(typeof(AudioSource))]
 public class VRPractice : MonoBehaviour
 {
 
+    private AudioSource EndSound;
     // Needs to be defined for each prefab and match with the name of the prefab
     public practiceOptions practiceType = practiceOptions.None;
 
@@ -75,6 +76,10 @@ public class VRPractice : MonoBehaviour
         {
             return $"{Timestamp},{PracticeType},{Repetition},{Stage},{StartTime},{EndTime}";
         }
+    }
+    void Awake() 
+    {
+        EndSound = GetComponent<AudioSource>();
     }
 
     private void Start()
@@ -186,8 +191,13 @@ public class VRPractice : MonoBehaviour
 
         }
 
-        yield return StartCoroutine(DestroyAfterSound());
+        Destroy(platform);
+        
+        EndSound.Play();
+        yield return StartCoroutine(ContinueAfterSound());
+
         pinchControl.enableUpdate = false;
+        experimentManager.nextStage();
     }
 
     IEnumerator positionHands()
@@ -293,14 +303,13 @@ public class VRPractice : MonoBehaviour
         yield return null;
     }
 
-    IEnumerator DestroyAfterSound() 
+    IEnumerator ContinueAfterSound() 
     {   
         // Wait until the sound is played
-        while (platformCtr.successSound.isPlaying) 
+        while (EndSound.isPlaying) 
         {
             yield return null;
         }
-        Destroy(platform);
     } 
 
     void Update()

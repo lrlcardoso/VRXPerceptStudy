@@ -52,7 +52,7 @@ public class ExperimentManager : MonoBehaviour
         // The variable nRepetitions_primaryPrac define the number of repetitions that will be done
         // during the primary practice (main practice, that is the first one).
         //[ReadOnly]
-        nRepetitions_primaryPrac = 40;
+        nRepetitions_primaryPrac = 4;
 
         // The variable nnRepetitions_refresherPrac define the number of repetitions that will be
         // done during the refresher practice (second practice, following the first post CCT).
@@ -180,7 +180,7 @@ public class ExperimentManager : MonoBehaviour
     
         yield return StartCoroutine(WaitToRecenter());
 
-        //yield return StartCoroutine(WaitToCalibrate());
+        yield return StartCoroutine(WaitToCalibrate());
 
         LoadNextStage();
     }
@@ -190,7 +190,7 @@ public class ExperimentManager : MonoBehaviour
         while (!pinchControl.delsysReady){
             yield return null;
         }
-        yield return new WaitForSeconds(2f);
+        yield return new WaitForSeconds(3f);
 
         Recenter();
     }
