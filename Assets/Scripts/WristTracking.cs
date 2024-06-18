@@ -41,16 +41,23 @@ public class WristTracking : MonoBehaviour
         XRHandSubsystem.UpdateSuccessFlags updateSuccessFlags,
         XRHandSubsystem.UpdateType updateType)
     {
-        
-        var trackingData = subsystem.rightHand.GetJoint(XRHandJointIDUtility.FromIndex(XRHandJointID.Wrist.ToIndex()));
+        UpdateJoint(subsystem, XRHandJointID.Wrist);
+        //UpdateJoint(subsystem, XRHandJointID.Palm);
+    }
 
-        //Debug.Log(trackingData);
+    void UpdateJoint(XRHandSubsystem subsystem, XRHandJointID joint)
+    {
 
-        if (trackingData.TryGetPose(out Pose pose))
-        {
-            gameObject.transform.localPosition = pose.position;
-            gameObject.transform.localRotation = pose.rotation;
-        }
+        var trackingData = subsystem.rightHand.GetJoint(XRHandJointIDUtility.FromIndex(joint.ToIndex()));
+
+        if (trackingData.id == XRHandJointID.Invalid)
+            return;
+
+        if (!trackingData.TryGetPose(out var pose))
+            return;
+
+        gameObject.transform.localPosition = pose.position;
+        gameObject.transform.localRotation = pose.rotation;
 
     }
 }

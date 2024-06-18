@@ -18,7 +18,7 @@ public enum CtrlMode
 public class ExperimentManager : MonoBehaviour
 {
 
-    void Definitions()
+    IEnumerator Definitions()
     {
         filePath = @"C:\Users\s4659771\Documents\VRXPerceptStudy\DATA";
 
@@ -52,13 +52,15 @@ public class ExperimentManager : MonoBehaviour
         // The variable nRepetitions_primaryPrac define the number of repetitions that will be done
         // during the primary practice (main practice, that is the first one).
         //[ReadOnly]
-        nRepetitions_primaryPrac = 4;
+        nRepetitions_primaryPrac = 40;
 
         // The variable nnRepetitions_refresherPrac define the number of repetitions that will be
         // done during the refresher practice (second practice, following the first post CCT).
         //[ReadOnly]
         nRepetitions_refresherPrac = 1;
         // ---------------------------------------------------------------------------------------
+        
+        yield return null;
     }
 
     [SerializeField]
@@ -69,6 +71,8 @@ public class ExperimentManager : MonoBehaviour
     public CtrlMode ControlMode = CtrlMode.None;
     // Collect participants ID and save data accordingly
     public string ID = "";
+
+    public float TableHeight = 0.0f;
     
     [ReadOnly]
     // Define the location in which all the files will be saved
@@ -133,12 +137,20 @@ public class ExperimentManager : MonoBehaviour
     [ReadOnly]
     public string Repetition;
 
+    [HideInInspector]
+    public Vector3 calibratedPos;
+    [HideInInspector]
+    public Vector3 calibratedRot;
+
     // Other variables
     private int currentStageIndex = 0;
     private GameObject currentStage;
+    private GameObject table;
     private Transform head;
     private Transform origin;
     private Transform target;
+    private PinchControl pinchControl;
+    private GameObject userHand;
 
     void Start()
     {
@@ -146,9 +158,66 @@ public class ExperimentManager : MonoBehaviour
         origin = GameObject.Find("Rig").transform;
         target = GameObject.Find("Scene/Recenter Position").transform;
 
-        Definitions();
+        table = GameObject.Find("Scene/Table");
+        if(TableHeight!=0.0f)
+        {
+            Vector3 newPosition = table.transform.position;
+            newPosition.y = TableHeight;
+            table.transform.position = newPosition;
+        }
+        else
+        {
+            Debug.Log("Need to specify table height.");
+            Application.Quit();
+        }
+
+        StartCoroutine(Initialization());
+    }
+
+    IEnumerator Initialization()
+    {
+        yield return StartCoroutine(Definitions());
     
+        yield return StartCoroutine(WaitToRecenter());
+
+        //yield return StartCoroutine(WaitToCalibrate());
+
         LoadNextStage();
+    }
+    IEnumerator WaitToRecenter()
+    {
+        pinchControl = GameObject.Find("Rig/Camera Offset/RightHand").GetComponent<PinchControl>();
+        while (!pinchControl.delsysReady){
+            yield return null;
+        }
+        yield return new WaitForSeconds(2f);
+
+        //Recenter();
+    }
+
+    IEnumerator WaitToCalibrate()
+    {
+        GameObject.Find("Rig/Camera Offset/RightHand").SetActive(false);
+        userHand = GameObject.Find("Rig/Camera Offset/RightHand_CCT");
+        userHand.SetActive(true);
+        
+        while (!Input.GetKeyDown("space")){
+            yield return null;
+        }
+
+        getHandPos();
+    }
+
+    public void getHandPos()
+    {
+        // Get the rotation Euler angles of the GameObject
+        calibratedRot = userHand.transform.rotation.eulerAngles;
+
+        // Get the position of the GameObject
+        calibratedPos = userHand.transform.position;
+
+        // Output the rotation Euler angles and position
+        Debug.Log("Calibration: OK");
     }
 
     public void Recenter()
@@ -164,20 +233,20 @@ public class ExperimentManager : MonoBehaviour
 
         float angle = Vector3.SignedAngle(cameraForward,targetForward, Vector3.up);
         origin.RotateAround(head.position, Vector3.up, angle);
+
+        Debug.Log("Recentre: OK");
     }
     
-    public void ResetView()
-    {
-        Recenter();
-    }
+    //public void ResetView()
+    //{
+    //    Recenter();
+    //}
     
     void Update()
     {
         if (Input.GetKeyDown("space"))
         {
             Recenter(); 
-            //Debug.Log(userHand.transform.position);
-            //Debug.Log(userHand.transform.rotation.eulerAngles);
         }
     }
 

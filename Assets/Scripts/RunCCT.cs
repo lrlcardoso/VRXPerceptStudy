@@ -174,15 +174,19 @@ public class RunCCT : MonoBehaviour
     }
 
     // Number of possibilities
-    private int numberOfPossibilities = 2;
+    private int numberOfPossibilities = 1;
     // Number of elements in the vector
     private int numberOfElements;
 
 
     void Start()
     {  
+        GameObject.Find("Rig/Camera Offset/RightHand").SetActive(false);
+        userHand = GameObject.Find("Rig/Camera Offset/RightHand_CCT");
+        userHand.SetActive(true);
         // Find the necessary GameObjects
-        userHand = GameObject.Find("Rig/Camera Offset/RightHand");
+        //userHand = GameObject.Find("Rig/Camera Offset/RightHand");
+        //userHand = Instantiate(Resources.Load<GameObject>("Prefabs/RightHand_CCT"), Vector3.zero, Quaternion.identity);
         hapticControl = GameObject.Find("Haptic Control").GetComponent<HapticControl>();
         experimentManager = GameObject.Find("Experiment Manager").GetComponent<ExperimentManager>();
         fixationMark = Instantiate(Resources.Load<GameObject>("Prefabs/fixationMark"), Vector3.zero, Quaternion.identity);
@@ -222,14 +226,11 @@ public class RunCCT : MonoBehaviour
         PositionRotationCombo[] positionRotationArray = new PositionRotationCombo[numberOfPossibilities];
         // Initialize the array with desired combinations of position and rotation
         //positionRotationArray[0] = new PositionRotationCombo(new Vector3(0.25f, 1.02f, 0.30f), new Vector3(307.77f, 302.50f, 27.84f));
-        //positionRotationArray[1] = new PositionRotationCombo(new Vector3 (-0.05f, 1.03f, 0.33f), new Vector3(306.80f, 264.32f, 28.40f));
-        positionRotationArray[0] = new PositionRotationCombo(new Vector3(0.21f, 0.74f, 0.36f), new Vector3(337.98f, 332.61f, 298.36f));
-        positionRotationArray[1] = new PositionRotationCombo(new Vector3(0.21f, 0.74f, 0.36f), new Vector3(337.98f, 332.61f, 298.36f));
-
+        positionRotationArray[0] = new PositionRotationCombo(experimentManager.calibratedPos, experimentManager.calibratedRot);
 
         // Disable the control of the hands during the CCT but, before, set the prefab open         
-        handAnimator = userHand.GetComponent<Animator>();
-        handAnimator.SetFloat("Blend", 1.0f);
+        //handAnimator = userHand.GetComponent<Animator>();
+        //handAnimator.SetFloat("Blend", 1.0f);
         
         // Create a 2D array to store the trials matrix that stores the combinations of incongruent, congruent, CCT practice (if applicable) and nogo trials 
         if(test.ToString() == "pre")
@@ -354,11 +355,13 @@ public class RunCCT : MonoBehaviour
         }
 
         startRecordingFPS = false;
+
+        //experimentManager.nextStage();
     }
 
     IEnumerator positionHands(int trial, PositionRotationCombo[] positionRotationArray, List<int> vector)
     {
-        handRefPos = Instantiate(Resources.Load<GameObject>("Prefabs/Open_Pinch"), positionRotationArray[vector[trial]].position, Quaternion.Euler(positionRotationArray[vector[trial]].rotationEuler));
+        handRefPos = Instantiate(Resources.Load<GameObject>("Prefabs/CCT_ref"), positionRotationArray[vector[trial]].position, Quaternion.Euler(positionRotationArray[vector[trial]].rotationEuler));
         handRefPos.GetComponentInChildren<SkinnedMeshRenderer>().material = (Material)Resources.Load("Materials/Clear", typeof(Material));
 
         indexTip_handRefPos = handRefPos.transform.Find("R_Wrist/R_IndexMetacarpal/R_IndexProximal/R_IndexIntermediate/R_IndexDistal/R_IndexTip");

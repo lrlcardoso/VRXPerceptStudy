@@ -19,8 +19,17 @@ public class VRPractice : MonoBehaviour
     public practiceOptions practiceType = practiceOptions.None;
 
     private GameObject bubblePrefab;
-    private Vector3 spawnAreaMin = new Vector3(-0.5f, 0.8f, 0.3f);
-    private Vector3 spawnAreaMax = new Vector3(0.5f, 1.3f, 0.5f);
+    
+    // Below, spawnAreaMin and spawnAreaMax adjust the area in which the bubbles and blocks will appear.
+    // From a top view, z is the front reach (depth) and x in the side reach; y is the height (it will be
+    // summed to the table height). 
+    // The border of the table is positioned at z = 0.084 and the platform is a square with 0.1 of side. 
+    // Thus, z should start from greater than 0.184. For the minimum, I am choosing 150mm from the edge, 
+    // so z = 0.234. For the maximum, I am choosing 400mm of reach, thus z = 0.484.
+    // Regarding the side reach, I am choosing fom -0.3 to +0.3.
+    // For the spawn height, I am choosing from 0.1 to 0.4 (above the table surface).  
+    private Vector3 spawnAreaMin = new Vector3(-0.3f, 0.1f, 0.234f);
+    private Vector3 spawnAreaMax = new Vector3(0.3f, 0.4f, 0.484f);
     private Material material1;
     private Material material2;
     private GameObject indexSphere; // Reference to the index finger sphere
@@ -97,7 +106,9 @@ public class VRPractice : MonoBehaviour
         }
 
         // Find the necessary GameObjects
+        GameObject.Find("Rig/Camera Offset/RightHand_CCT").SetActive(false);
         userHand = GameObject.Find("Rig/Camera Offset/RightHand");
+        userHand.SetActive(true);
         pinchControl = GameObject.Find("Rig/Camera Offset/RightHand").GetComponent<PinchControl>();
         bubblePrefab = Resources.Load<GameObject>("Prefabs/Bubble");
         platformPrefab = Resources.Load<GameObject>("Prefabs/platform");
@@ -216,7 +227,7 @@ public class VRPractice : MonoBehaviour
         // Generate random position within the specified spawn area
         Vector3 spawnPosition = new Vector3(
             UnityEngine.Random.Range(spawnAreaMin.x, spawnAreaMax.x),
-            UnityEngine.Random.Range(spawnAreaMin.y, spawnAreaMax.y),
+            UnityEngine.Random.Range(experimentManager.TableHeight + spawnAreaMin.y, experimentManager.TableHeight + spawnAreaMax.y),
             UnityEngine.Random.Range(spawnAreaMin.z, spawnAreaMax.z)
         );
 

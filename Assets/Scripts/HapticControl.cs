@@ -73,7 +73,7 @@ public class HapticControl : MonoBehaviour
                 comPort.DtrEnable = true;
                 comPort.RtsEnable = true;
                 comPort.Open();
-                Debug.Log("Setup completed!");
+                Debug.Log("HapticBox setup: OK");
             }
             catch (IOException e)
             {

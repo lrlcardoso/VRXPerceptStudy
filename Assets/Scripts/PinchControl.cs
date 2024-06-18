@@ -70,6 +70,7 @@ public class PinchControl : MonoBehaviour
     private string filePath_save;
     private string filePath_load;
     public bool enableUpdate = false;
+    public bool delsysReady = false;
 
 
     //Initialize the matrices that identify the system
@@ -385,7 +386,7 @@ public class PinchControl : MonoBehaviour
 
     private void setupDelsys() 
     {
-        UnityEngine.Debug.Log("Delsys setup is running...");
+        //UnityEngine.Debug.Log("Delsys setup is running...");
         try
         {
             //Establish TCP/IP connection to server using URL entered
@@ -395,7 +396,8 @@ public class PinchControl : MonoBehaviour
             commandStream = commandSocket.GetStream();
             commandReader = new StreamReader(commandStream, Encoding.ASCII);
             commandWriter = new StreamWriter(commandStream, Encoding.ASCII);
-            UnityEngine.Debug.Log(commandReader.ReadLine());
+            response = commandReader.ReadLine();
+            //UnityEngine.Debug.Log(response);
             commandReader.ReadLine();   //get extra line terminator
             connected = true;
         }
@@ -418,10 +420,10 @@ public class PinchControl : MonoBehaviour
             if(response == "YES")
             {
                 sensors.Add(i+1);
-                UnityEngine.Debug.Log("SENSOR " + (i+1) + " DETECTED");
+                //UnityEngine.Debug.Log("SENSOR " + (i+1) + " DETECTED");
                 command = "SENSOR " + (i+1) + " SETMODE 173";
                 response = SendCommand(command);
-                UnityEngine.Debug.Log(response);
+                //UnityEngine.Debug.Log(response);
             }
         }
 
@@ -449,12 +451,14 @@ public class PinchControl : MonoBehaviour
 
         //Send start command to server to stream data
         response = SendCommand(COMMAND_START);
-        UnityEngine.Debug.Log("COMMAND: " + COMMAND_START);
-        UnityEngine.Debug.Log("RESPONSE: " + response);   
+        //UnityEngine.Debug.Log("COMMAND: " + COMMAND_START);
+        //UnityEngine.Debug.Log("RESPONSE: " + response);   
 
         Thread.Sleep(1000); //wait 1s to ensure the buffer is full enough
 
-        UnityEngine.Debug.Log("Delsys is ready to be use!");
+        UnityEngine.Debug.Log("Delsys setup: OK");
+
+        delsysReady = true;
     }
 
     void OnDestroy()
@@ -462,8 +466,8 @@ public class PinchControl : MonoBehaviour
         //if(experimentManager.ControlMode.ToString()=="Shoulder")
         //{
             response = SendCommand(COMMAND_STOP);
-            UnityEngine.Debug.Log("COMMAND: " + COMMAND_STOP);
-            UnityEngine.Debug.Log("RESPONSE: " + response);
+            //UnityEngine.Debug.Log("COMMAND: " + COMMAND_STOP);
+            //UnityEngine.Debug.Log("RESPONSE: " + response);
             commandSocket.Close();
         //}
     } 
