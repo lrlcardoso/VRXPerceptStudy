@@ -97,7 +97,7 @@ LightmapSettings:
     m_ExportTrainingData: 0
     m_TrainingDataDestination: TrainingData
     m_LightProbeSampleCountMultiplier: 4
-  m_LightingDataAsset: {fileID: 112000000, guid: 797559bb2efbbf04a9929b05d4362430,
+  m_LightingDataAsset: {fileID: 112000000, guid: 1bf03bd957e176e4d8b8149b465e8530,
     type: 2}
   m_LightingSettings: {fileID: 87033561}
 --- !u!196 &4
@@ -332,7 +332,7 @@ LightingSettings:
   m_PrefabAsset: {fileID: 0}
   m_Name: Settings.lighting
   serializedVersion: 6
-  m_GIWorkflowMode: 0
+  m_GIWorkflowMode: 1
   m_EnableBakedLightmaps: 1
   m_EnableRealtimeLightmaps: 0
   m_RealtimeEnvironmentLighting: 1
@@ -818,7 +818,7 @@ Transform:
   m_GameObject: {fileID: 280338398}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.020227099, y: 1.0439888, z: -0.021972008}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2402,7 +2402,7 @@ Transform:
   m_GameObject: {fileID: 934192539}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.065, y: -1.11, z: 0}
+  m_LocalPosition: {x: 0.065, y: -1.12, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 0.78}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -3921,8 +3921,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ArduinoPort: COM4
   ControlMode: 2
-  ID: P22
-  TableHeight: 0.802
+  ID: P33
+  TableHeight: 0.765
   filePath: 
   nTrials: 0
   nTrials_noGo: 0

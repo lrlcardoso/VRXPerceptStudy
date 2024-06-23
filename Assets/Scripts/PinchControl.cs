@@ -183,15 +183,15 @@ public class PinchControl : MonoBehaviour
     void Start()
     {      
         experimentManager = GameObject.Find("Experiment Manager").GetComponent<ExperimentManager>();
-        UnityEngine.Debug.Log("Hi");
+
         // Define the name of the file that will be saved
         id = experimentManager.ID;
         fileName = id + "_ShoulderMov.csv";
-        UnityEngine.Debug.Log("Hi");
+
 
         // Prepare the file to save data
         filePath_save = experimentManager.filePath + @"\" + id + @"\1_rawDATA";
-        UnityEngine.Debug.Log("Hi");
+
 
         // Ensure the directory exists
         if (!Directory.Exists(filePath_save))
@@ -200,14 +200,13 @@ public class PinchControl : MonoBehaviour
         }
         // Initialize file path
         filePath_save = Path.Combine(filePath_save, fileName);
-        UnityEngine.Debug.Log("Hi");
 
         // Ensure the file has headers if it's new
         if (!File.Exists(filePath_save))
         {
             File.WriteAllText(filePath_save, "Timestamp,Acquisition_Time(ms),Sensor1_Acc_x,Sensor1_Acc_y,Sensor1_Acc_z,Sensor1_Gyr_x,Sensor1_Gyr_y,Sensor1_Gyr_z,Sensor2_Acc_x,Sensor2_Acc_y,Sensor2_Acc_z,Sensor2_Gyr_x,Sensor2_Gyr_y,Sensor2_Gyr_z,Sensor3_Acc_x,Sensor3_Acc_y,Sensor3_Acc_z,Sensor3_Gyr_x,Sensor3_Gyr_y,Sensor3_Gyr_z\n");
         }
-        UnityEngine.Debug.Log("Hi");
+  
 
         //call function to do the set up with the Delsys base
         setupDelsys();
@@ -256,9 +255,9 @@ public class PinchControl : MonoBehaviour
             // Update hand pose according to the current x value
             handAnimator.SetFloat("Blend", x);
         
-            //GetSensorsData();
+            GetSensorsData();
 
-            //SaveShoulderData();
+            SaveShoulderData();
 
             if(experimentManager.ControlMode.ToString()=="Fingers"){
 
@@ -461,10 +460,10 @@ public class PinchControl : MonoBehaviour
             if(response == "YES")
             {
                 sensors.Add(i+1);
-                UnityEngine.Debug.Log("SENSOR " + (i+1) + " DETECTED");
+                //UnityEngine.Debug.Log("SENSOR " + (i+1) + " DETECTED");
                 command = "SENSOR " + (i+1) + " SETMODE 173";
                 response = SendCommand(command);
-                UnityEngine.Debug.Log(response);
+                //UnityEngine.Debug.Log(response);
             }
         }
 
