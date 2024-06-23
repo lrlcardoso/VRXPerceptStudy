@@ -324,7 +324,7 @@ public class RunCCT : MonoBehaviour
         }
         
         // Display the results (for debugging)
-        PrintResults(trials);
+        // PrintResults(trials);
 
         numberOfElements = trials.GetLength(1);
         List<int> vector = HandPosVec(numberOfPossibilities, numberOfElements);
@@ -350,6 +350,13 @@ public class RunCCT : MonoBehaviour
         {
             Debug.LogError("Variables test and testType must be defined.");
         }
+    }
+
+    void OnDestroy()
+    {
+        Destroy(stopwatch?.gameObject);
+        Destroy(fixationMark?.gameObject);
+        Destroy(handRefPos?.gameObject);
     }
 
     IEnumerator StepsCCT(PositionRotationCombo[] positionRotationArray, List<int> vector)
@@ -382,8 +389,9 @@ public class RunCCT : MonoBehaviour
 
         startRecordingFPS = false;
 
-        Destroy(stopwatch);
-        Destroy(fixationMark);
+        Destroy(stopwatch?.gameObject);
+        Destroy(fixationMark?.gameObject);
+        Destroy(handRefPos?.gameObject);
         userHand.SetActive(false);
     }
 

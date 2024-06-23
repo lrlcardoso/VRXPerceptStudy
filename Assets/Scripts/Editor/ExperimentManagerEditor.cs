@@ -9,19 +9,20 @@ public class ExperimentManagerEditor : Editor
         DrawDefaultInspector();
 
         ExperimentManager exam = (ExperimentManager)target;
-        //if(GUILayout.Button("Reset View"))
-        //{
-        //    exam.ResetView();
-        //}
-
-        if(GUILayout.Button("Start CCT"))
+        
+        if(GUILayout.Button("Previous Stage"))
         {
-            exam.startCCT();
+            exam.previousStage();
         }
 
         if(GUILayout.Button("Next Stage"))
         {
             exam.nextStage();
+        }
+
+        if(GUILayout.Button("Start CCT"))
+        {
+            exam.startCCT();
         }
         
     }

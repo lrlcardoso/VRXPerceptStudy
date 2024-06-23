@@ -50,7 +50,7 @@ public class VRPractice : MonoBehaviour
     private float requiredStayTime = 1f; // Time required to stay in position to trigger color change
     private float timeInPosition = 0f; // Variable to counts the time that stays in position
     private GameObject handIni;
-    bool inBubbleStage = false;
+    bool inBubbleStage = true;
     private GameObject platformPrefab;
     float startTime = 0f;
     float endTime = 0f;
@@ -137,6 +137,19 @@ public class VRPractice : MonoBehaviour
         indexSphere = GameObject.Find("Rig/Camera Offset/RightHand/R_Wrist/R_IndexMetacarpal/R_IndexProximal/R_IndexIntermediate/R_IndexDistal/R_IndexTip/IndexSphere");
         thumbSphere = GameObject.Find("Rig/Camera Offset/RightHand/R_Wrist/R_ThumbMetacarpal/R_ThumbProximal/R_ThumbDistal/R_ThumbTip/ThumbSphere");
 
+        if (pinchControl == null)
+        {
+            Debug.LogError("PinchControl component not found on RightHand.");
+        }
+        if (indexSphere == null)
+        {
+            Debug.LogError("IndexSphere GameObject not found.");
+        }
+        if (thumbSphere == null)
+        {
+            Debug.LogError("ThumbSphere GameObject not found.");
+        }
+
 
         // Check if practiceType was defined
         if(practiceType.ToString() != "None")
@@ -208,7 +221,10 @@ public class VRPractice : MonoBehaviour
         EndSound.Play();
         yield return StartCoroutine(ContinueAfterSound());
 
-        Destroy(platform);
+        Destroy(platform?.gameObject);
+        Destroy(volumeControllerInstance?.gameObject);
+        Destroy(handIni?.gameObject);
+        
         pinchControl.enableUpdate = false;
         pinchControl.x = 0.0f;
         userHand.GetComponent<Animator>().SetFloat("Blend", 0.0f);
@@ -221,10 +237,13 @@ public class VRPractice : MonoBehaviour
         experimentManager.nextStage();
     }
 
-    //void OnDestroy()
-    //{
-    //    userHand.SetActive(false);
-    //}
+    void OnDestroy()
+    {
+        Destroy(platform?.gameObject);
+        Destroy(volumeControllerInstance?.gameObject);
+        Destroy(handIni?.gameObject);
+    }
+    
 
     IEnumerator positionHands()
     {
@@ -368,14 +387,16 @@ public class VRPractice : MonoBehaviour
         } 
     }
     void UpdateScreen(practiceOptions type)
-    {
+    { 
         if (type.ToString() == "primary")
         {
             text = "Now, let's play!.\n\n" +
 
+            "You can control your hand pose using your real " + experimentManager.ControlMode.ToString() + ".\n\n" +
+
             "Match the pose and position of the hand in front of you.\n\n" +
 
-            "Pop the bubble with your index finger or thumb based on its color.\n\n" +
+            "Then look for a bubble and pop it with your index finger or thumb based on its color.\n\n" +
 
             "Note that you need to open the pinch to be able to pop the bubbles.\n\n" +
 

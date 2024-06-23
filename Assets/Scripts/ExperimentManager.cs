@@ -11,8 +11,8 @@ using UnityEngine;
 public enum CtrlMode
 {
     None,
-    Shoulder,
-    Fingers
+    shoulder,
+    fingers
 }
 
 public class ExperimentManager : MonoBehaviour
@@ -277,6 +277,11 @@ public class ExperimentManager : MonoBehaviour
         LoadNextStage();
     }
 
+    public void previousStage()
+    {
+        LoadPreviousStage();
+    }
+
     void LoadNextStage()
     {
         if (currentStageIndex < stages.Count)
@@ -289,6 +294,9 @@ public class ExperimentManager : MonoBehaviour
 
             // Instantiate the next stage
             currentStage = Instantiate(stages[currentStageIndex], transform);
+
+            // Update any stage-specific variables or setup
+            // Example: Clearing previous stage data
             TargetOnlyTrials = "";
             FamiliarizationTrials = "";
             CCTTrials = "";
@@ -305,11 +313,46 @@ public class ExperimentManager : MonoBehaviour
             Debug.Log("All stages completed.");
             
             screenController.SetText(
-            "All done!\n\n" +
-            "Thank you again for participating!"
-            ,5);
+                "All done!\n\n" +
+                "Thank you again for participating!"
+                ,5);
         }
     }
+
+    
+    void LoadPreviousStage()
+    {
+        if (currentStageIndex > 0)
+        {
+            currentStageIndex--;
+
+            // Destroy the current stage if it exists
+            if (currentStage != null)
+            {
+                Destroy(currentStage);
+            }
+
+            // Instantiate the previous stage
+            currentStage = Instantiate(stages[currentStageIndex], transform);
+
+            // Update any stage-specific variables or setup
+            // Example: Clearing previous stage data
+            TargetOnlyTrials = "";
+            FamiliarizationTrials = "";
+            CCTTrials = "";
+            NoGoTrials = "";
+            Repetition = "";
+
+            // Show status
+            CurrentStage = currentStage.name.Replace("(Clone)", "").Trim();
+        }
+        else
+        {
+            Debug.Log("Already at the first stage.");
+            // Optionally handle what happens when trying to go back from the first stage
+        }
+    }
+
 
     // Method to get the component from the current stage
     public T GetCurrentStageComponent<T>() where T : Component

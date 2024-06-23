@@ -211,7 +211,7 @@ public class PinchControl : MonoBehaviour
         //call function to do the set up with the Delsys base
         setupDelsys();
         
-        if(experimentManager.ControlMode.ToString()=="Shoulder")
+        if(experimentManager.ControlMode.ToString()=="shoulder")
         {
             filePath_load = experimentManager.filePath + @"\" + id + @"\0_calibrationMatrices\";
 
@@ -266,7 +266,7 @@ public class PinchControl : MonoBehaviour
 
             SaveShoulderData();
 
-            if(experimentManager.ControlMode.ToString()=="Fingers"){
+            if(experimentManager.ControlMode.ToString()=="fingers"){
 
                 if (m_HandSubsystem != null && m_HandSubsystem.running)
                     return;
@@ -289,7 +289,7 @@ public class PinchControl : MonoBehaviour
                     m_HandSubsystem.updatedHands += OnUpdatedHands;
 
             }
-            else if(experimentManager.ControlMode.ToString()=="Shoulder")
+            else if(experimentManager.ControlMode.ToString()=="shoulder")
             {
                 // update x value according to the shoulder position
                 X = shoulderElevation();
@@ -505,7 +505,7 @@ public class PinchControl : MonoBehaviour
 
     void OnDestroy()
     {
-        //if(experimentManager.ControlMode.ToString()=="Shoulder")
+        //if(experimentManager.ControlMode.ToString()=="shoulder")
         //{
             response = SendCommand(COMMAND_STOP);
             //UnityEngine.Debug.Log("COMMAND: " + COMMAND_STOP);
