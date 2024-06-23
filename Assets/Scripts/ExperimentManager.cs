@@ -25,23 +25,29 @@ public class ExperimentManager : MonoBehaviour
         // CCT DEFINITIONS -----------------------------------------------------------------------
 
         // WARNING: nTrials (below) needs to be a multiple of 4
-        nTrials = 60; // Total number of trials, congruant + incongruent  
+        nTrials = 8; // [= 60] Total number of trials, congruant + incongruent  
 
         // WARNING: nTrials_noGo (below) needs to be a multiple of 2  
-        nTrials_noGo = 8; // Number of no go trials
+        nTrials_noGo = 2; // [= 8] Number of no go trials
 
         // The variable nTrials_targetOnly, defines the total number of trials in which no visual 
         // distractor will happen (only vibration). They are necessary in order to accustom the 
         // participants to the vibrotactile elevation discrimination task. The number of 
         // nTrials_targetOnly = 10 was defined based on previous studies.
         // Importantly, this is only added to "pre" tests, either H2S or H2H.
-        nTrials_targetOnly = 10;  
+        nTrials_targetOnly = 4; // [= 10]  
 
         // The variable nTrials_familiarization, defines the total number of trials (congruant + 
         // incongruent) that will preceed the actual test. The number of 
         // nTrials_familiarization = 20 was defined based on previous studies.
         // Importantly, this is only added to "pre" tests, either H2S or H2H.
-        nTrials_familiarization = 20; 
+        nTrials_familiarization = 4; // [= 20]
+
+        // The variable nTrials_noGoFamiliarization, defines the total number of trials (congruant + 
+        // incongruent) that will be noGo, during familiarization phase. The number of 
+        // nTrials_noGoFamiliarization = 2 was defined based.
+        // Importantly, this is only added to "pre" tests, either H2S or H2H.
+        nTrials_noGoFamiliarization = 2; // [= 2]
         // ---------------------------------------------------------------------------------------
 
         // PRACTICE DEFINITIONS ------------------------------------------------------------------
@@ -100,6 +106,13 @@ public class ExperimentManager : MonoBehaviour
     // Importantly, this is only added to "pre" tests, either H2S or H2H.
     [ReadOnly]
     public int nTrials_familiarization; 
+
+    // The variable nTrials_noGoFamiliarization, defines the total number of trials (congruant + 
+    // incongruent) that will be noGo, during familiarization phase. The number of 
+    // nTrials_noGoFamiliarization = 2 was defined based.
+    // Importantly, this is only added to "pre" tests, either H2S or H2H.
+    [ReadOnly]
+    public int nTrials_noGoFamiliarization; 
     // ---------------------------------------------------------------------------------------
 
     // PRACTICE DEFINITIONS ------------------------------------------------------------------

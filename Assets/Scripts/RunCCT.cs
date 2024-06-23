@@ -131,6 +131,8 @@ public class RunCCT : MonoBehaviour
     int nCongruentFamiliarizationFinger;
     int nIncongruentFamiliarizationThumbFinger;
     int nIncongruentFamiliarizationFingerThumb;
+    int nThumbNoGoFamiliarization;
+    int nFingerNoGoFamiliarization;
     int nCongruentThumb;
     int nCongruentFinger;
     int nIncongruentThumbFinger;
@@ -144,6 +146,7 @@ public class RunCCT : MonoBehaviour
     int nTrials_noGo;
     int nTrials_targetOnly;
     int nTrials_familiarization; 
+    int nTrials_noGoFamiliarization;
 
     // TrialData class to hold each trial's data
     public class TrialData
@@ -203,6 +206,7 @@ public class RunCCT : MonoBehaviour
         nTrials_noGo = experimentManager.nTrials_noGo;
         nTrials_targetOnly = experimentManager.nTrials_targetOnly;
         nTrials_familiarization = experimentManager.nTrials_familiarization; 
+        nTrials_noGoFamiliarization = experimentManager.nTrials_noGoFamiliarization; 
 
         // Define the name of the file that will be saved
         fileName = id + "_CCT.csv";
@@ -237,7 +241,7 @@ public class RunCCT : MonoBehaviour
         // Create a 2D array to store the trials matrix that stores the combinations of incongruent, congruent, CCT practice (if applicable) and nogo trials 
         if(test.ToString() == "pre")
         {
-            trials = new char[2, nTrials + nTrials_noGo + nTrials_targetOnly + nTrials_familiarization];
+            trials = new char[2, nTrials + nTrials_noGo + nTrials_targetOnly + nTrials_familiarization + nTrials_noGoFamiliarization];
 
             // Define the balance among all conditions
             nTargetOnlyThumb = (nTrials_targetOnly) / 2;
@@ -247,6 +251,8 @@ public class RunCCT : MonoBehaviour
             nCongruentFamiliarizationFinger = (nTrials_familiarization) / 4;
             nIncongruentFamiliarizationThumbFinger = (nTrials_familiarization) / 4;
             nIncongruentFamiliarizationFingerThumb = (nTrials_familiarization) / 4;
+            nThumbNoGoFamiliarization = nTrials_noGoFamiliarization / 2;
+            nFingerNoGoFamiliarization = nTrials_noGoFamiliarization / 2;
 
             nCongruentThumb = nTrials / 4;
             nCongruentFinger = nTrials / 4;
@@ -265,18 +271,21 @@ public class RunCCT : MonoBehaviour
             AddTrials(trials, thumb, index, nTrials_targetOnly + (2 * nCongruentFamiliarizationThumb), nIncongruentFamiliarizationThumbFinger); // Add incongruent trials thumb-index
             AddTrials(trials, index, thumb, nTrials_targetOnly +  (3 * nCongruentFamiliarizationThumb), nIncongruentFamiliarizationFingerThumb); // Add incongruent trials index-thumb
 
-            AddTrials(trials, thumb, thumb, nTrials_targetOnly + nTrials_familiarization, nCongruentThumb); // Add congruent trials thumb-thumb
-            AddTrials(trials, index, index, nTrials_targetOnly + nTrials_familiarization + nCongruentThumb, nCongruentFinger); // Add congruent trials index-index
-            AddTrials(trials, thumb, index, nTrials_targetOnly + nTrials_familiarization + (2 * nCongruentThumb), nIncongruentThumbFinger); // Add incongruent trials thumb-index
-            AddTrials(trials, index, thumb, nTrials_targetOnly + nTrials_familiarization + (3 * nCongruentThumb), nIncongruentFingerThumb); // Add incongruent trials index-thumb
+            AddTrials(trials, thumb, noGo, nTrials_targetOnly + nTrials_familiarization, nThumbNoGoFamiliarization); // Add incongruent trials thumb-index
+            AddTrials(trials, index, noGo, nTrials_targetOnly +  nTrials_familiarization + nThumbNoGoFamiliarization, nFingerNoGoFamiliarization); // Add incongruent trials index-thumb
 
-            AddTrials(trials, thumb, noGo, nTrials_targetOnly + nTrials_familiarization + nTrials, nThumbNoGo); // Add noGo trials, thumb-N
-            AddTrials(trials, index, noGo, nTrials_targetOnly + nTrials_familiarization + nTrials + nThumbNoGo, nFingerNoGo); // Add noGo trials, index-N
+            AddTrials(trials, thumb, thumb, nTrials_targetOnly + nTrials_familiarization + nTrials_noGoFamiliarization, nCongruentThumb); // Add congruent trials thumb-thumb
+            AddTrials(trials, index, index, nTrials_targetOnly + nTrials_familiarization + nTrials_noGoFamiliarization + nCongruentThumb, nCongruentFinger); // Add congruent trials index-index
+            AddTrials(trials, thumb, index, nTrials_targetOnly + nTrials_familiarization + nTrials_noGoFamiliarization + (2 * nCongruentThumb), nIncongruentThumbFinger); // Add incongruent trials thumb-index
+            AddTrials(trials, index, thumb, nTrials_targetOnly + nTrials_familiarization + nTrials_noGoFamiliarization + (3 * nCongruentThumb), nIncongruentFingerThumb); // Add incongruent trials index-thumb
+
+            AddTrials(trials, thumb, noGo, nTrials_targetOnly + nTrials_familiarization + nTrials_noGoFamiliarization + nTrials, nThumbNoGo); // Add noGo trials, thumb-N
+            AddTrials(trials, index, noGo, nTrials_targetOnly + nTrials_familiarization + nTrials_noGoFamiliarization + nTrials + nThumbNoGo, nFingerNoGo); // Add noGo trials, index-N
 
             // Shuffle the trials using Fisher-Yates algorithm
-            Shuffle(trials, 0, nTrials_familiarization + nTrials + nTrials_noGo);
+            Shuffle(trials, 0, nTrials_familiarization + nTrials_noGoFamiliarization + nTrials + nTrials_noGo);
             Shuffle(trials, nTrials_targetOnly, nTrials + nTrials_noGo);
-            Shuffle(trials, nTrials_targetOnly + nTrials_familiarization, 0);
+            Shuffle(trials, nTrials_targetOnly + nTrials_familiarization + nTrials_noGoFamiliarization, 0);
 
             // Set the CCT status
             experimentManager.TargetOnlyTrials = "0 out of " + nTrials_targetOnly + ".";
@@ -315,7 +324,7 @@ public class RunCCT : MonoBehaviour
         }
         
         // Display the results (for debugging)
-        // PrintResults(trials);
+        PrintResults(trials);
 
         numberOfElements = trials.GetLength(1);
         List<int> vector = HandPosVec(numberOfPossibilities, numberOfElements);
