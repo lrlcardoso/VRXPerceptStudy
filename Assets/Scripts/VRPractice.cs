@@ -9,7 +9,8 @@ public enum practiceOptions
 {
     None,
     primary,
-    refresher
+    refresher,
+    debrief
 }
 [RequireComponent(typeof(AudioSource))]
 public class VRPractice : MonoBehaviour
@@ -45,6 +46,7 @@ public class VRPractice : MonoBehaviour
     string fileName;
     int nRepetitions_primaryPrac;
     int nRepetitions_refresherPrac;
+    int nRepetitions_debriefPrac;
     Vector3 handIniPos = new Vector3(0.06098f,0.14f,0.20876f); 
     Quaternion handIniRot = Quaternion.Euler(309.02655f,349.61621f,283.25412f); 
     Vector3 platformPos; 
@@ -91,6 +93,7 @@ public class VRPractice : MonoBehaviour
         id = experimentManager.ID;
         nRepetitions_primaryPrac = experimentManager.nRepetitions_primaryPrac;
         nRepetitions_refresherPrac = experimentManager.nRepetitions_refresherPrac;
+        nRepetitions_debriefPrac = experimentManager.nRepetitions_debriefPrac;
 
         // Define the name of the file that will be saved
         fileName = id + "_PracticeTimes.csv";
@@ -148,6 +151,10 @@ public class VRPractice : MonoBehaviour
             else if(practiceType.ToString()=="refresher")
             {
                 nRepetitions = nRepetitions_refresherPrac;
+            }
+            else if(practiceType.ToString()=="debrief")
+            {
+                nRepetitions = nRepetitions_debriefPrac;
             }
             
             experimentManager.Repetition = "0  out of " + nRepetitions + ".";
@@ -375,11 +382,19 @@ public class VRPractice : MonoBehaviour
 
             "Note that you need to open the pinch to be able to pop the bubbles.\n\n" +
 
-            "Finally, move the block to the yellow platform in front of you.";
+            "Finally, move the block to the yellow platform in front of you.\n\n" + 
+            
+            "We are going to repeat this " + nRepetitions_primaryPrac + " times.";
         }
         else if (type.ToString() == "refresher")
         {
-            text = "Let's play a bit more.\n\n";
+            text = "Let's do " + nRepetitions_refresherPrac + " more repetitions.";
+        }
+        else if (type.ToString() == "debrief")
+        {
+            text = "We are almost there.!\n\n" +
+            
+            "We just need to do " + nRepetitions_debriefPrac + " more repetitions.";
         }
                     
         screenController.SetText(text,3);

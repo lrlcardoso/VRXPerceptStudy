@@ -25,11 +25,9 @@ public class ExperimentManager : MonoBehaviour
         // CCT DEFINITIONS -----------------------------------------------------------------------
 
         // WARNING: nTrials (below) needs to be a multiple of 4
-        //[ReadOnly]
         nTrials = 60; // Total number of trials, congruant + incongruent  
 
         // WARNING: nTrials_noGo (below) needs to be a multiple of 2  
-        //[ReadOnly]
         nTrials_noGo = 8; // Number of no go trials
 
         // The variable nTrials_targetOnly, defines the total number of trials in which no visual 
@@ -37,27 +35,27 @@ public class ExperimentManager : MonoBehaviour
         // participants to the vibrotactile elevation discrimination task. The number of 
         // nTrials_targetOnly = 10 was defined based on previous studies.
         // Importantly, this is only added to "pre" tests, either H2S or H2H.
-        //[ReadOnly]
         nTrials_targetOnly = 10;  
 
         // The variable nTrials_familiarization, defines the total number of trials (congruant + 
         // incongruent) that will preceed the actual test. The number of 
         // nTrials_familiarization = 20 was defined based on previous studies.
         // Importantly, this is only added to "pre" tests, either H2S or H2H.
-        //[ReadOnly]
         nTrials_familiarization = 20; 
         // ---------------------------------------------------------------------------------------
 
         // PRACTICE DEFINITIONS ------------------------------------------------------------------
         // The variable nRepetitions_primaryPrac define the number of repetitions that will be done
         // during the primary practice (main practice, that is the first one).
-        //[ReadOnly]
         nRepetitions_primaryPrac = 50;
 
         // The variable nnRepetitions_refresherPrac define the number of repetitions that will be
         // done during the refresher practice (second practice, following the first post CCT).
-        //[ReadOnly]
         nRepetitions_refresherPrac = 5;
+
+        // The variable nnRepetitions_debriefPrac define the number of repetitions that will be
+        // done during the debriefing practice (last practice, following the last CCT).
+        nRepetitions_debriefPrac = 5;
         // ---------------------------------------------------------------------------------------
         
         yield return null;
@@ -110,10 +108,15 @@ public class ExperimentManager : MonoBehaviour
     [ReadOnly]
     public int nRepetitions_primaryPrac;
 
-    // The variable nnRepetitions_refresherPrac define the number of repetitions that will be
+    // The variable nRepetitions_refresherPrac define the number of repetitions that will be
     // done during the refresher practice (second practice, following the first post CCT).
     [ReadOnly]
     public int nRepetitions_refresherPrac;
+
+    // The variable nRepetitions_debriefPrac define the number of repetitions that will be
+    // done during the debriefing practice (last practice, following the last CCT).
+    [ReadOnly]
+    public int nRepetitions_debriefPrac;
     // ---------------------------------------------------------------------------------------
 
     public List<GameObject> stages;  // List of stage prefabs
