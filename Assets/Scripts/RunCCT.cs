@@ -893,25 +893,25 @@ public class RunCCT : MonoBehaviour
     {
         if (type.ToString() == "H2H")
         {
-            text = "Fix your gaze on the green mark between your virtual thumb and index finger <b>at all times</b>.\n\n" +
+            text = "Fix your gaze on the green mark between your virtual thumb and index finger <b><i>at all times</i></b>.\n\n" +
 
-            "Respond quickly and accurately to <b>vibrations</b> in your thumb or index finger using the thumb or index finger of your other hand.\n\n" +
+            "Respond quickly and accurately to <b><i>vibrations</i></b> in your thumb or index finger using the thumb or index finger of your other hand.\n\n" +
 
-            "If one tip of your virtual thumb or index finger blinks with the vibration, <b>ignore it</b>.\n\n" +
+            "If one tip of your virtual thumb or index finger blinks with the vibration, <b><i>ignore it</i></b>.\n\n" +
 
-            "If <b>both</b> tips blink together, <b>withhold your response</b>.\n\n" +
+            "If <b><i>both</i></b> tips blink together, <b><i>withhold your response</i></b>.\n\n" +
 
             "When you are ready, fix your gaze on the green mark and say 'YES' loudly to start the test";
         }
         else if (type.ToString() == "H2S")
         {
-            text = "Fix your gaze on the green mark between your virtual thumb and index finger <b>at all times</b>.\n\n" +
+            text = "Fix your gaze on the green mark between your virtual thumb and index finger <b><i>at all times</i></b>.\n\n" +
 
-            "Respond quickly and accurately to <b>vibrations</b> in the <b>front or back of your shoulder</b> using the thumb or index finger of your other hand, respectively.\n\n" +
+            "Respond quickly and accurately to <b><i>vibrations</i></b> in the <b><i>front or back of your shoulder</i></b> using the thumb or index finger of your other hand, respectively.\n\n" +
 
-            "If one tip of your virtual thumb or index finger blinks with the vibration, <b>ignore it</b>.\n\n" +
+            "If one tip of your virtual thumb or index finger blinks with the vibration, <b><i>ignore it</i></b>.\n\n" +
 
-            "If <b>both</b> tips blink together, <b>withhold your response</b>.\n\n" +
+            "If <b><i>both</i></b> tips blink together, <b><i>withhold your response</i></b>.\n\n" +
 
             "When you are ready, fix your gaze on the green mark and say 'YES' loudly to start the test";
         }
