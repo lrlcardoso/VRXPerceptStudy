@@ -252,6 +252,13 @@ public class PinchControl : MonoBehaviour
     void Update()
     {   
         if(enableUpdate){
+
+            //Define the limits between 0 and 1
+            if(x<0)
+                x=0;
+            if(x>1)
+                x=1;
+
             // Update hand pose according to the current x value
             handAnimator.SetFloat("Blend", x);
         
@@ -293,11 +300,6 @@ public class PinchControl : MonoBehaviour
                 //UnityEngine.Debug.Log(x);
             }
             
-            //Define the limits between 0 and 1
-            if(x<0)
-                x=0;
-            if(x>1)
-                x=1;
         }
     }
 
