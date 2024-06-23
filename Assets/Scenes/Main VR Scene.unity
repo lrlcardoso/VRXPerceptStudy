@@ -3928,6 +3928,7 @@ MonoBehaviour:
   nTrials_noGo: 0
   nTrials_targetOnly: 0
   nTrials_familiarization: 0
+  nTrials_noGoFamiliarization: 0
   nRepetitions_primaryPrac: 0
   nRepetitions_refresherPrac: 0
   nRepetitions_debriefPrac: 0
