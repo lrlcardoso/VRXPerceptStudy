@@ -14,10 +14,10 @@ public class ExperimentManagerEditor : Editor
         //    exam.ResetView();
         //}
 
-        //if(GUILayout.Button("Toggle HapticBox"))
-        //{
-        //    exam.toggle_HapticBox();
-        //}
+        if(GUILayout.Button("Start CCT"))
+        {
+            exam.startCCT();
+        }
 
         if(GUILayout.Button("Next Stage"))
         {

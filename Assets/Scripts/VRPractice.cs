@@ -37,6 +37,7 @@ public class VRPractice : MonoBehaviour
     private GameObject thumbSphere; // Reference to the thumb sphere
     private GameObject platform;
     private GameObject table;
+    private ScreenController screenController;
     public bool isAble2pinch = false;
     int nRepetitions;
     string id;
@@ -62,6 +63,7 @@ public class VRPractice : MonoBehaviour
     float startTime = 0f;
     float endTime = 0f;
     string stage = "";
+    string text;
 
     // RepetitionData class to hold each repetition's data
     public class RepetitionData
@@ -111,15 +113,16 @@ public class VRPractice : MonoBehaviour
         }
 
         // Find the necessary GameObjects
-        GameObject.Find("Rig/Camera Offset/RightHand_CCT").SetActive(false);
-        userHand = GameObject.Find("Rig/Camera Offset/RightHand");
-        userHand.SetActive(true);
         pinchControl = GameObject.Find("Rig/Camera Offset/RightHand").GetComponent<PinchControl>();
         bubblePrefab = Resources.Load<GameObject>("Prefabs/Bubble");
         platformPrefab = Resources.Load<GameObject>("Prefabs/platform");
         table = GameObject.Find("Scene/Table");
+        
+        userHand = GameObject.Find("Rig/Camera Offset/RightHand");
+        userHand.SetActive(true);
 
         pinchControl.enableUpdate = true;
+        //userHand.GetComponent<Animator>().SetFloat("Blend", 1.0f);
                 
         // Set platform position based on the table position and platform thickness
         float tableY = table.transform.position.y;
@@ -134,17 +137,24 @@ public class VRPractice : MonoBehaviour
         indexSphere = GameObject.Find("Rig/Camera Offset/RightHand/R_Wrist/R_IndexMetacarpal/R_IndexProximal/R_IndexIntermediate/R_IndexDistal/R_IndexTip/IndexSphere");
         thumbSphere = GameObject.Find("Rig/Camera Offset/RightHand/R_Wrist/R_ThumbMetacarpal/R_ThumbProximal/R_ThumbDistal/R_ThumbTip/ThumbSphere");
 
-        if(practiceType.ToString()=="primary")
+
+        // Check if practiceType was defined
+        if(practiceType.ToString() != "None")
         {
-            nRepetitions = nRepetitions_primaryPrac;
+            if(practiceType.ToString()=="primary")
+            {
+                nRepetitions = nRepetitions_primaryPrac;
+            }
+            else if(practiceType.ToString()=="refresher")
+            {
+                nRepetitions = nRepetitions_refresherPrac;
+            }
+            
             experimentManager.Repetition = "0  out of " + nRepetitions + ".";
+            screenController = GameObject.Find("Scene/Screen").GetComponent<ScreenController>();
+            UpdateScreen(practiceType);
             StartCoroutine(runVRPractice());
-        }
-        else if(practiceType.ToString()=="refresher")
-        {
-            nRepetitions = nRepetitions_refresherPrac;
-            experimentManager.Repetition = "0  out of " + nRepetitions + ".";
-            StartCoroutine(runVRPractice());
+
         }
         else
         {
@@ -189,16 +199,30 @@ public class VRPractice : MonoBehaviour
 
             yield return StartCoroutine(showStatus(repetition));
 
+            screenController.SetText((repetition+1).ToString(),24);
+
         }
 
-        Destroy(platform);
-        
         EndSound.Play();
         yield return StartCoroutine(ContinueAfterSound());
 
+        Destroy(platform);
         pinchControl.enableUpdate = false;
+        pinchControl.x = 0.0f;
+        userHand.GetComponent<Animator>().SetFloat("Blend", 0.0f);
+
+        // Wait for the end of the frame
+        yield return null;
+
+        userHand.SetActive(false);
+
         experimentManager.nextStage();
     }
+
+    //void OnDestroy()
+    //{
+    //    userHand.SetActive(false);
+    //}
 
     IEnumerator positionHands()
     {
@@ -338,5 +362,26 @@ public class VRPractice : MonoBehaviour
             thumbSphere.SetActive(false);
             isAble2pinch = false;
         } 
+    }
+    void UpdateScreen(practiceOptions type)
+    {
+        if (type.ToString() == "primary")
+        {
+            text = "Now, let's play!.\n\n" +
+
+            "Match the pose and position of the hand in front of you.\n\n" +
+
+            "Pop the bubble with your index finger or thumb based on its color.\n\n" +
+
+            "Note that you need to open the pinch to be able to pop the bubbles.\n\n" +
+
+            "Finally, move the block to the yellow platform in front of you.";
+        }
+        else if (type.ToString() == "refresher")
+        {
+            text = "Let's play a bit more.\n\n";
+        }
+                    
+        screenController.SetText(text,3);
     }
 }

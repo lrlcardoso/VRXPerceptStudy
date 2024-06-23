@@ -82,6 +82,8 @@ public class RunCCT : MonoBehaviour
     private GameObject userHand; 
 
     private Animator handAnimator; 
+
+    private ScreenController screenController;
      
     // Messages to communicate with Arduino
     private byte[] thumbShoulder_CCT = new byte[] { 0x33 };
@@ -112,6 +114,7 @@ public class RunCCT : MonoBehaviour
     int distractorCount;
     Vector3[] position;
     string strMsg;
+    string text;
     char button;
     string elapsedTimeStr;
     bool readingButton;
@@ -181,7 +184,8 @@ public class RunCCT : MonoBehaviour
 
     void Start()
     {  
-        GameObject.Find("Rig/Camera Offset/RightHand").SetActive(false);
+        //GameObject.Find("Rig/Camera Offset/RightHand").GetComponent<Animator>().SetFloat("Blend", 0.0f);
+        //GameObject.Find("Rig/Camera Offset/RightHand").SetActive(false);
         userHand = GameObject.Find("Rig/Camera Offset/RightHand_CCT");
         userHand.SetActive(true);
         // Find the necessary GameObjects
@@ -325,9 +329,13 @@ public class RunCCT : MonoBehaviour
         //    Debug.Log(item);
         //}
 
+        screenController = GameObject.Find("Scene/Screen").GetComponent<ScreenController>();
+
         // Check if test and testType were defined
         if(test.ToString() != "None" || testType.ToString() != "None")
         {
+            UpdateScreen(testType);
+
             // Start the coroutine to execute the CCT steps in sequence
             StartCoroutine(StepsCCT(positionRotationArray, vector));
         }
@@ -339,6 +347,8 @@ public class RunCCT : MonoBehaviour
 
     IEnumerator StepsCCT(PositionRotationCombo[] positionRotationArray, List<int> vector)
     {
+        //yield return StartCoroutine(waitButtonDown());
+
         startRecordingFPS = true;
 
         for (int trial = 0; trial < trials.GetLength(1); trial++){
@@ -354,12 +364,20 @@ public class RunCCT : MonoBehaviour
             yield return StartCoroutine(saveAndStatus(trial));
         }
 
-        startRecordingFPS = false;
-
         if(!(testType.ToString() == "H2H" && test.ToString() == "pre"))
         {
             experimentManager.nextStage();
         }
+        else
+        {
+            UpdateScreen(testTypeOptions.None);
+        }
+
+        startRecordingFPS = false;
+
+        Destroy(stopwatch);
+        Destroy(fixationMark);
+        userHand.SetActive(false);
     }
 
     IEnumerator positionHands(int trial, PositionRotationCombo[] positionRotationArray, List<int> vector)
@@ -391,11 +409,26 @@ public class RunCCT : MonoBehaviour
             {
                 // If the player is within range, start counting time
                 timeInPosition += Time.deltaTime;
-                // If the required time is reached, change the color of the object
-                if (timeInPosition >= requiredStayTime)
+                
+                if(trial != 0)
                 {
-                    Destroy(handRefPos);
-                    yield break;
+                    // If the required time is reached, change the color of the object
+                    if (timeInPosition >= requiredStayTime)
+                    {
+                        Destroy(handRefPos);
+                        yield break;
+                    }
+                }
+                else
+                {   
+                    // If the required time is reached, change the color of the object
+                    if ((timeInPosition >= requiredStayTime) && experimentManager.startCCTflag)
+                    {
+                        experimentManager.startCCTflag = false;
+                        screenController.SetText("",3);
+                        Destroy(handRefPos);
+                        yield break;
+                    }
                 }
             }
             else
@@ -572,6 +605,7 @@ public class RunCCT : MonoBehaviour
             yield return null;
         } 
         strMsg = hapticControl.msg;
+        //Debug.Log(strMsg);
         hapticControl.msgReceived = false;
 
         button = '\0';
@@ -853,5 +887,41 @@ public class RunCCT : MonoBehaviour
             frameCount++;
             deltaTime += Time.deltaTime;
         }
+    }
+
+    void UpdateScreen(testTypeOptions type)
+    {
+        if (type.ToString() == "H2H")
+        {
+            text = "Fix your gaze on the green mark between your virtual thumb and index finger <b>at all times</b>.\n\n" +
+
+            "Respond quickly and accurately to <b>vibrations</b> in your thumb or index finger using the thumb or index finger of your other hand.\n\n" +
+
+            "If one tip of your virtual thumb or index finger blinks with the vibration, <b>ignore it</b>.\n\n" +
+
+            "If <b>both</b> tips blink together, <b>withhold your response</b>.\n\n" +
+
+            "When you are ready, fix your gaze on the green mark and say 'YES' loudly to start the test";
+        }
+        else if (type.ToString() == "H2S")
+        {
+            text = "Fix your gaze on the green mark between your virtual thumb and index finger <b>at all times</b>.\n\n" +
+
+            "Respond quickly and accurately to <b>vibrations</b> in the <b>front or back of your shoulder</b> using the thumb or index finger of your other hand, respectively.\n\n" +
+
+            "If one tip of your virtual thumb or index finger blinks with the vibration, <b>ignore it</b>.\n\n" +
+
+            "If <b>both</b> tips blink together, <b>withhold your response</b>.\n\n" +
+
+            "When you are ready, fix your gaze on the green mark and say 'YES' loudly to start the test";
+        }
+        else if (type.ToString() == "None")
+        {
+            text = "Well done!\n\n" +
+
+            "You can remove the headset now for a short break.";
+        }
+                    
+        screenController.SetText(text,3);
     }
 }

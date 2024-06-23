@@ -26,11 +26,11 @@ public class ExperimentManager : MonoBehaviour
 
         // WARNING: nTrials (below) needs to be a multiple of 4
         //[ReadOnly]
-        nTrials = 4; // Total number of trials, congruant + incongruent  
+        nTrials = 60; // Total number of trials, congruant + incongruent  
 
         // WARNING: nTrials_noGo (below) needs to be a multiple of 2  
         //[ReadOnly]
-        nTrials_noGo = 2; // Number of no go trials
+        nTrials_noGo = 8; // Number of no go trials
 
         // The variable nTrials_targetOnly, defines the total number of trials in which no visual 
         // distractor will happen (only vibration). They are necessary in order to accustom the 
@@ -38,26 +38,26 @@ public class ExperimentManager : MonoBehaviour
         // nTrials_targetOnly = 10 was defined based on previous studies.
         // Importantly, this is only added to "pre" tests, either H2S or H2H.
         //[ReadOnly]
-        nTrials_targetOnly = 4;  
+        nTrials_targetOnly = 10;  
 
         // The variable nTrials_familiarization, defines the total number of trials (congruant + 
         // incongruent) that will preceed the actual test. The number of 
         // nTrials_familiarization = 20 was defined based on previous studies.
         // Importantly, this is only added to "pre" tests, either H2S or H2H.
         //[ReadOnly]
-        nTrials_familiarization = 4; 
+        nTrials_familiarization = 20; 
         // ---------------------------------------------------------------------------------------
 
         // PRACTICE DEFINITIONS ------------------------------------------------------------------
         // The variable nRepetitions_primaryPrac define the number of repetitions that will be done
         // during the primary practice (main practice, that is the first one).
         //[ReadOnly]
-        nRepetitions_primaryPrac = 4;
+        nRepetitions_primaryPrac = 50;
 
         // The variable nnRepetitions_refresherPrac define the number of repetitions that will be
         // done during the refresher practice (second practice, following the first post CCT).
         //[ReadOnly]
-        nRepetitions_refresherPrac = 1;
+        nRepetitions_refresherPrac = 5;
         // ---------------------------------------------------------------------------------------
         
         yield return null;
@@ -141,6 +141,8 @@ public class ExperimentManager : MonoBehaviour
     public Vector3 calibratedPos;
     [HideInInspector]
     public Vector3 calibratedRot;
+    [HideInInspector]
+    public bool startCCTflag = false;
 
     // Other variables
     private int currentStageIndex = 0;
@@ -150,6 +152,7 @@ public class ExperimentManager : MonoBehaviour
     private Transform origin;
     private Transform target;
     private PinchControl pinchControl;
+    private ScreenController screenController;
     private GameObject userHand;
 
     void Start()
@@ -170,8 +173,13 @@ public class ExperimentManager : MonoBehaviour
             Debug.Log("Need to specify table height.");
             Application.Quit();
         }
-
         StartCoroutine(Initialization());
+
+        screenController = GameObject.Find("Scene/Screen").GetComponent<ScreenController>();
+        screenController.SetText(
+        "Hi there!\n\n" +
+        "Thank you for participating!"
+        ,5);
     }
 
     IEnumerator Initialization()
@@ -206,6 +214,8 @@ public class ExperimentManager : MonoBehaviour
         }
 
         getHandPos();
+
+        userHand.SetActive(false);
     }
 
     public void getHandPos()
@@ -237,10 +247,10 @@ public class ExperimentManager : MonoBehaviour
         Debug.Log("Recentre: OK");
     }
     
-    //public void ResetView()
-    //{
-    //    Recenter();
-    //}
+    public void startCCT()
+    {
+        startCCTflag = true;
+    }
     
     //void Update()
     //{
@@ -281,6 +291,11 @@ public class ExperimentManager : MonoBehaviour
         else
         {
             Debug.Log("All stages completed.");
+            
+            screenController.SetText(
+            "All done!\n\n" +
+            "Thank you again for participating!"
+            ,5);
         }
     }
 
