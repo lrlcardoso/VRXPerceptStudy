@@ -108,6 +108,9 @@ public class VRPractice : MonoBehaviour
         // Find the necessary GameObjects
         pinchControl = GameObject.Find("Rig/Camera Offset/RightHand").GetComponent<PinchControl>();
         bubblePrefab = Resources.Load<GameObject>("Prefabs/Bubble");
+        
+        // If hand CCT is still active, then deactive it and active the hand that will be used during the game
+        GameObject.Find("Rig/Camera Offset/RightHand_CCT").SetActive(false);
         userHand = GameObject.Find("Rig/Camera Offset/RightHand");
         userHand.SetActive(true);
 

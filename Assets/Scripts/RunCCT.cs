@@ -184,13 +184,11 @@ public class RunCCT : MonoBehaviour
 
     void Start()
     {  
-        //GameObject.Find("Rig/Camera Offset/RightHand").GetComponent<Animator>().SetFloat("Blend", 0.0f);
-        //GameObject.Find("Rig/Camera Offset/RightHand").SetActive(false);
+        // If hand of VR practice is still active, then deactive it and active the hand that will be used during the CCT
+        GameObject.Find("Rig/Camera Offset/RightHand").SetActive(false);
         userHand = GameObject.Find("Rig/Camera Offset/RightHand_CCT");
         userHand.SetActive(true);
-        // Find the necessary GameObjects
-        //userHand = GameObject.Find("Rig/Camera Offset/RightHand");
-        //userHand = Instantiate(Resources.Load<GameObject>("Prefabs/RightHand_CCT"), Vector3.zero, Quaternion.identity);
+
         hapticControl = GameObject.Find("Haptic Control").GetComponent<HapticControl>();
         experimentManager = GameObject.Find("Experiment Manager").GetComponent<ExperimentManager>();
         fixationMark = Instantiate(Resources.Load<GameObject>("Prefabs/fixationMark"), Vector3.zero, Quaternion.identity);
@@ -893,7 +891,7 @@ public class RunCCT : MonoBehaviour
     {
         if (type.ToString() == "H2H")
         {
-            text = "Fix your gaze on the green mark between your virtual thumb and index finger <b><i>at all times</i></b>.\n\n" +
+            text = "Fix your gaze on the central sphere between your virtual thumb and index finger <b><i>at all times</i></b>.\n\n" +
 
             "Respond quickly and accurately to <b><i>vibrations</i></b> in your thumb or index finger using the thumb or index finger of your other hand.\n\n" +
 
@@ -901,11 +899,11 @@ public class RunCCT : MonoBehaviour
 
             "If <b><i>both</i></b> tips blink together, <b><i>withhold your response</i></b>.\n\n" +
 
-            "When you are ready, fix your gaze on the green mark and say 'YES' loudly to start the test";
+            "When you are ready, look for a white sphere, fix your gaze on it and say 'YES' loudly to start the test";
         }
         else if (type.ToString() == "H2S")
         {
-            text = "Fix your gaze on the green mark between your virtual thumb and index finger <b><i>at all times</i></b>.\n\n" +
+            text = "Fix your gaze on the central sphere between your virtual thumb and index finger <b><i>at all times</i></b>.\n\n" +
 
             "Respond quickly and accurately to <b><i>vibrations</i></b> in the <b><i>front or back of your shoulder</i></b> using the thumb or index finger of your other hand, respectively.\n\n" +
 
@@ -913,7 +911,7 @@ public class RunCCT : MonoBehaviour
 
             "If <b><i>both</i></b> tips blink together, <b><i>withhold your response</i></b>.\n\n" +
 
-            "When you are ready, fix your gaze on the green mark and say 'YES' loudly to start the test";
+            "When you are ready, look for a white sphere, fix your gaze on it and say 'YES' loudly to start the test";
         }
         else if (type.ToString() == "None")
         {

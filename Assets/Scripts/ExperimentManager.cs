@@ -192,8 +192,6 @@ public class ExperimentManager : MonoBehaviour
         yield return StartCoroutine(WaitToRecenter());
 
         yield return StartCoroutine(WaitToCalibrate());
-
-        LoadNextStage();
     }
     IEnumerator WaitToRecenter()
     {
@@ -217,8 +215,6 @@ public class ExperimentManager : MonoBehaviour
         }
 
         getHandPos();
-
-        userHand.SetActive(false);
     }
 
     public void getHandPos()
