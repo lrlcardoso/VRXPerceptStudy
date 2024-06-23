@@ -1006,7 +1006,7 @@ Transform:
   m_GameObject: {fileID: 114742199}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.764, z: 0.552}
+  m_LocalPosition: {x: 0, y: 0.765, z: 0.552}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -3930,8 +3930,11 @@ MonoBehaviour:
   nTrials_familiarization: 0
   nRepetitions_primaryPrac: 0
   nRepetitions_refresherPrac: 0
+  nRepetitions_debriefPrac: 0
   stages:
   - {fileID: 2829836504274827119, guid: f3b50b5a3f9872a4f81d83ae787d7625, type: 3}
+  - {fileID: 2829836504274827119, guid: 4cf771179bf0c9f4abb2d5ed330da50b, type: 3}
+  - {fileID: 2829836504274827119, guid: a50d5bad0eea9024a9fff0e87411ecf7, type: 3}
   CurrentStage: 
   TargetOnlyTrials: 
   FamiliarizationTrials: 

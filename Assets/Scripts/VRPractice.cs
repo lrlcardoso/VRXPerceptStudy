@@ -22,22 +22,13 @@ public class VRPractice : MonoBehaviour
 
     private GameObject bubblePrefab;
     
-    // Below, spawnAreaMin and spawnAreaMax adjust the area in which the bubbles and blocks will appear.
-    // From a top view, z is the front reach (depth) and x in the side reach; y is the height (it will be
-    // summed to the table height). 
-    // The border of the table is positioned at z = 0.084 and the platform is a square with 0.1 of side. 
-    // Thus, z should start from greater than 0.184. For the minimum, I am choosing 150mm from the edge, 
-    // so z = 0.234. For the maximum, I am choosing 400mm of reach, thus z = 0.484.
-    // Regarding the side reach, I am choosing fom -0.3 to +0.3.
-    // For the spawn height, I am choosing from 0.1 to 0.4 (above the table surface).  
-    private Vector3 spawnAreaMin = new Vector3(-0.3f, 0.1f, 0.234f);
-    private Vector3 spawnAreaMax = new Vector3(0.3f, 0.4f, 0.484f);
     private Material material1;
     private Material material2;
     private GameObject indexSphere; // Reference to the index finger sphere
     private GameObject thumbSphere; // Reference to the thumb sphere
     private GameObject platform;
-    private GameObject table;
+    private GameObject volumeControllerInstance;
+    private Collider spawnVolume;
     private ScreenController screenController;
     public bool isAble2pinch = false;
     int nRepetitions;
@@ -49,7 +40,6 @@ public class VRPractice : MonoBehaviour
     int nRepetitions_debriefPrac;
     Vector3 handIniPos = new Vector3(0.06098f,0.14f,0.20876f); 
     Quaternion handIniRot = Quaternion.Euler(309.02655f,349.61621f,283.25412f); 
-    Vector3 platformPos; 
     // User's hand position (wrist)
     private GameObject userHand; 
     private PinchControl pinchControl;
@@ -118,19 +108,23 @@ public class VRPractice : MonoBehaviour
         // Find the necessary GameObjects
         pinchControl = GameObject.Find("Rig/Camera Offset/RightHand").GetComponent<PinchControl>();
         bubblePrefab = Resources.Load<GameObject>("Prefabs/Bubble");
-        platformPrefab = Resources.Load<GameObject>("Prefabs/platform");
-        table = GameObject.Find("Scene/Table");
-        
         userHand = GameObject.Find("Rig/Camera Offset/RightHand");
         userHand.SetActive(true);
 
         pinchControl.enableUpdate = true;
-        //userHand.GetComponent<Animator>().SetFloat("Blend", 1.0f);
-                
-        // Set platform position based on the table position and platform thickness
-        float tableY = table.transform.position.y;
-        float platformThickness = platformPrefab.transform.localScale.y;
-        platformPos = new Vector3(0.0f, tableY + platformThickness, 0.14f); // Keep x and z as original
+
+        platform = Instantiate(Resources.Load<GameObject>("Prefabs/platform"));
+        Vector3 originalPosition = platform.transform.position;
+        // Set the desired Y position
+        float newYPosition = originalPosition.y + experimentManager.TableHeight;
+        // Set the new position vector with only Y-axis modified
+        Vector3 newPosition = new Vector3(originalPosition.x, newYPosition, originalPosition.z);
+        platform.transform.position = newPosition;
+        platformCtr = platform.GetComponent<DetectObject>();
+
+        // Set the volume to randomly spawn the bubbles
+        volumeControllerInstance = Instantiate(Resources.Load<GameObject>("Prefabs/VolumeController"));
+        spawnVolume = volumeControllerInstance.GetComponent<BoxCollider>();
         
         // Load materials from Resources folder
         material1 = Resources.Load<Material>("Materials/BubbleFinger");
@@ -172,8 +166,6 @@ public class VRPractice : MonoBehaviour
 
     IEnumerator runVRPractice()
     {
-        platform = Instantiate(platformPrefab, platformPos, Quaternion.identity);
-        platformCtr = platform.GetComponent<DetectObject>();
 
         for (int repetition = 0; repetition < nRepetitions; repetition++)
         {
@@ -266,11 +258,13 @@ public class VRPractice : MonoBehaviour
     IEnumerator bubble()
     {
         inBubbleStage = true;
-        // Generate random position within the specified spawn area
+
+        Bounds bounds = spawnVolume.bounds;
+
         Vector3 spawnPosition = new Vector3(
-            UnityEngine.Random.Range(spawnAreaMin.x, spawnAreaMax.x),
-            UnityEngine.Random.Range(experimentManager.TableHeight + spawnAreaMin.y, experimentManager.TableHeight + spawnAreaMax.y),
-            UnityEngine.Random.Range(spawnAreaMin.z, spawnAreaMax.z)
+            UnityEngine.Random.Range(bounds.min.x, bounds.max.x),
+            UnityEngine.Random.Range(bounds.min.y + experimentManager.TableHeight, bounds.max.y + experimentManager.TableHeight),
+            UnityEngine.Random.Range(bounds.min.z, bounds.max.z)
         );
 
         // Instantiate the bubble at the random position
