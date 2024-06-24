@@ -259,6 +259,7 @@ public class PinchControl : MonoBehaviour
             if(x>1)
                 x=1;
 
+
             // Update hand pose according to the current x value
             handAnimator.SetFloat("Blend", x);
         

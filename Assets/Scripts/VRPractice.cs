@@ -29,6 +29,7 @@ public class VRPractice : MonoBehaviour
     private GameObject platform;
     private GameObject volumeControllerInstance;
     private Collider spawnVolume;
+    private Bounds bounds;
     private ScreenController screenController;
     public bool isAble2pinch = false;
     int nRepetitions;
@@ -56,6 +57,8 @@ public class VRPractice : MonoBehaviour
     float endTime = 0f;
     string stage = "";
     string text;
+    Vector3 volumePos;
+    Vector3 platformPos;
 
     // RepetitionData class to hold each repetition's data
     public class RepetitionData
@@ -117,16 +120,14 @@ public class VRPractice : MonoBehaviour
         pinchControl.enableUpdate = true;
 
         platform = Instantiate(Resources.Load<GameObject>("Prefabs/platform"));
-        Vector3 originalPosition = platform.transform.position;
-        // Set the desired Y position
-        float newYPosition = originalPosition.y + experimentManager.TableHeight;
-        // Set the new position vector with only Y-axis modified
-        Vector3 newPosition = new Vector3(originalPosition.x, newYPosition, originalPosition.z);
-        platform.transform.position = newPosition;
+        platformPos = new Vector3(0.0f, experimentManager.TableHeight-0.005f, experimentManager.calibratedPos.z);
+        platform.transform.position = platformPos;
         platformCtr = platform.GetComponent<DetectObject>();
 
         // Set the volume to randomly spawn the bubbles
         volumeControllerInstance = Instantiate(Resources.Load<GameObject>("Prefabs/VolumeController"));
+        volumePos = new Vector3(0.15f, experimentManager.TableHeight-0.005f+0.05f, experimentManager.calibratedPos.z-0.084f);
+        volumeControllerInstance.transform.position = volumePos;
         spawnVolume = volumeControllerInstance.GetComponent<BoxCollider>();
         
         // Load materials from Resources folder
@@ -234,7 +235,7 @@ public class VRPractice : MonoBehaviour
 
         userHand.SetActive(false);
 
-        experimentManager.nextStage();
+        //experimentManager.nextStage();
     }
 
     void OnDestroy()
@@ -247,8 +248,14 @@ public class VRPractice : MonoBehaviour
 
     IEnumerator positionHands()
     {
-        Vector3 newHandIniPos = new Vector3(handIniPos.x, handIniPos.y + experimentManager.TableHeight, handIniPos.z); // adjust position according to table height
-        handIni = Instantiate(Resources.Load<GameObject>("Prefabs/Close_Pinch"), newHandIniPos, handIniRot);
+        //bounds = spawnVolume.bounds;
+        //Vector3 newHandIniPos = new Vector3(handIniPos.x, handIniPos.y + experimentManager.TableHeight, handIniPos.z); // adjust position according to table height
+        //handIni = Instantiate(Resources.Load<GameObject>("Prefabs/Close_Pinch"), newHandIniPos, handIniRot);
+        //Vector3 newHandIniPos = new Vector3(volumePos.x + (bounds.size.x)/2, volumePos.y + (bounds.size.y)/2, platformPos.z);
+        //handIni = Instantiate(Resources.Load<GameObject>("Prefabs/Practice_ref"), volumePos + (bounds.size)/2, handIniRot);
+
+
+        handIni = Instantiate(Resources.Load<GameObject>("Prefabs/CCT_ref"), experimentManager.calibratedPos, Quaternion.Euler(experimentManager.calibratedRot));
         handIni.GetComponentInChildren<SkinnedMeshRenderer>().material = (Material)Resources.Load("Materials/Clear", typeof(Material));
 
         timeInPosition = 0f;
@@ -257,7 +264,7 @@ public class VRPractice : MonoBehaviour
         // Check if the player is within the detection radius of the target position
         float distanceToTarget = Vector3.Distance(userHand.transform.position, handIni.transform.position);
         
-            if ((distanceToTarget <= detectionRadius) & pinchControl.x < 0.1f)
+            if ((distanceToTarget <= detectionRadius) & (pinchControl.x > 0.4f & pinchControl.x < 0.6f))
             {
                 // If the player is within range, start counting time
                 timeInPosition += Time.deltaTime;
@@ -281,11 +288,11 @@ public class VRPractice : MonoBehaviour
     {
         inBubbleStage = true;
 
-        Bounds bounds = spawnVolume.bounds;
+        bounds = spawnVolume.bounds;
 
         Vector3 spawnPosition = new Vector3(
             UnityEngine.Random.Range(bounds.min.x, bounds.max.x),
-            UnityEngine.Random.Range(bounds.min.y + experimentManager.TableHeight, bounds.max.y + experimentManager.TableHeight),
+            UnityEngine.Random.Range(bounds.min.y, bounds.max.y),
             UnityEngine.Random.Range(bounds.min.z, bounds.max.z)
         );
 
@@ -363,7 +370,7 @@ public class VRPractice : MonoBehaviour
     {
         if(inBubbleStage)
         {
-            if (pinchControl.x > 0.6f)
+            if (pinchControl.x > 0.7f)
             {
                 // Turn on the spheres
                 indexSphere.SetActive(true);

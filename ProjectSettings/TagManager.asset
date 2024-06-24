@@ -9,6 +9,7 @@ TagManager:
   - TableSurface
   - object2move
   - floor
+  - VolumeController
   layers:
   - Default
   - TransparentFX
