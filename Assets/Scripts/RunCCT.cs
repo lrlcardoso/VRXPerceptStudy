@@ -289,7 +289,7 @@ public class RunCCT : MonoBehaviour
 
             // Set the CCT status
             experimentManager.TargetOnlyTrials = "0 out of " + nTrials_targetOnly + ".";
-            experimentManager.FamiliarizationTrials = "0 out of " + nTrials_familiarization + ".";
+            experimentManager.FamiliarizationTrials = "0 out of " + (nTrials_familiarization + nTrials_noGoFamiliarization) + ".";
             experimentManager.CCTTrials = "0 out of " + nTrials + ".";
             experimentManager.NoGoTrials = "0  out of " + nTrials_noGo + ".";
         }
@@ -398,7 +398,16 @@ public class RunCCT : MonoBehaviour
     IEnumerator positionHands(int trial, PositionRotationCombo[] positionRotationArray, List<int> vector)
     {
         handRefPos = Instantiate(Resources.Load<GameObject>("Prefabs/CCT_ref"), positionRotationArray[vector[trial]].position, Quaternion.Euler(positionRotationArray[vector[trial]].rotationEuler));
-        handRefPos.GetComponentInChildren<SkinnedMeshRenderer>().material = (Material)Resources.Load("Materials/Clear", typeof(Material));
+        if(trial != 0)
+        {
+            //Debug.Log("Trial " + trial + ": Clear");
+            handRefPos.GetComponentInChildren<SkinnedMeshRenderer>().material = (Material)Resources.Load("Materials/Transparent", typeof(Material));
+        }
+        else
+        {
+            //Debug.Log("Trial " + trial + ": Transparent");
+            handRefPos.GetComponentInChildren<SkinnedMeshRenderer>().material = (Material)Resources.Load("Materials/Clear", typeof(Material));
+        }
 
         indexTip_handRefPos = handRefPos.transform.Find("R_Wrist/R_IndexMetacarpal/R_IndexProximal/R_IndexIntermediate/R_IndexDistal/R_IndexTip");
         thumbTip_handRefPos = handRefPos.transform.Find("R_Wrist/R_ThumbMetacarpal/R_ThumbProximal/R_ThumbDistal/R_ThumbTip");
@@ -411,7 +420,7 @@ public class RunCCT : MonoBehaviour
         renderer_fixationMark.sharedMaterial.color = Color.white;
 
         Vector3 stopwatchPosition = fixationMarkPosition;
-        stopwatchPosition.y -= 0.015f;
+        stopwatchPosition.z -= 0.00546f;//0.015f;
         stopwatch.transform.position = stopwatchPosition;
 
         timeInPosition = 0f;
@@ -500,7 +509,8 @@ public class RunCCT : MonoBehaviour
             }
             
             // Turn off the fixation mark
-            fixationMark.SetActive(false);
+            //fixationMark.SetActive(false);
+            renderer_fixationMark.sharedMaterial.color = Color.white;
 
             // Start the loop to show the visual distractor and vibrate the motor
             frameCounter = 0;
@@ -568,7 +578,8 @@ public class RunCCT : MonoBehaviour
             }
             
             // Turn off the fixation mark
-            fixationMark.SetActive(false);
+            //fixationMark.SetActive(false);
+            renderer_fixationMark.sharedMaterial.color = Color.white;
 
             // Start the loop to show the visual distractor and vibrate the motor
             frameCounter = 0;
@@ -657,7 +668,8 @@ public class RunCCT : MonoBehaviour
 
     IEnumerator feedback(int trial)
     {
-        
+        fixationMark.SetActive(false);
+
         if (elapsedTime<tooSlow)
         {
             renderer_fixationMark.sharedMaterial.color = Color.green;
@@ -755,7 +767,7 @@ public class RunCCT : MonoBehaviour
             {
                 targetOnly++;
             }
-            else if(trial>=nTrials_targetOnly && trial<(nTrials_familiarization+nTrials_targetOnly))
+            else if(trial>=nTrials_targetOnly && trial<(nTrials_familiarization+nTrials_noGoFamiliarization+nTrials_targetOnly))
             {
                 familiarization++;
             }
@@ -780,7 +792,7 @@ public class RunCCT : MonoBehaviour
 
             // Set the CCT status
             experimentManager.TargetOnlyTrials = targetOnly + " out of " + nTrials_targetOnly + ".";
-            experimentManager.FamiliarizationTrials = familiarization + " out of " + nTrials_familiarization + ".";
+            experimentManager.FamiliarizationTrials = familiarization + " out of " + (nTrials_familiarization + nTrials_noGoFamiliarization) + ".";
             experimentManager.CCTTrials = (incongruent+congruent) + " out of " + nTrials + ".";
             experimentManager.NoGoTrials = nogo + "  out of " + nTrials_noGo + ".";
         }
