@@ -386,7 +386,7 @@ public class RunCCT : MonoBehaviour
          
         if(!(testType.ToString() == "H2H" && test.ToString() == "pre"))
         {
-            //experimentManager.nextStage();
+            experimentManager.nextStage();
         }
         else
         {

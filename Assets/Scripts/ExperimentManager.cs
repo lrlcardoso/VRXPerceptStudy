@@ -53,7 +53,7 @@ public class ExperimentManager : MonoBehaviour
         // PRACTICE DEFINITIONS ------------------------------------------------------------------
         // The variable nRepetitions_primaryPrac define the number of repetitions that will be done
         // during the primary practice (main practice, that is the first one).
-        nRepetitions_primaryPrac = 50;
+        nRepetitions_primaryPrac = 10;
 
         // The variable nnRepetitions_refresherPrac define the number of repetitions that will be
         // done during the refresher practice (second practice, following the first post CCT).

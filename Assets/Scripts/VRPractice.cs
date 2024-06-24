@@ -231,7 +231,7 @@ public class VRPractice : MonoBehaviour
 
         userHand.SetActive(false);
 
-        //experimentManager.nextStage();
+        experimentManager.nextStage();
     }
 
     void OnDestroy()
