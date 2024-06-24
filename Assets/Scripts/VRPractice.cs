@@ -39,8 +39,8 @@ public class VRPractice : MonoBehaviour
     int nRepetitions_primaryPrac;
     int nRepetitions_refresherPrac;
     int nRepetitions_debriefPrac;
-    Vector3 handIniPos = new Vector3(0.06098f,0.14f,0.20876f); 
-    Quaternion handIniRot = Quaternion.Euler(309.02655f,349.61621f,283.25412f); 
+    //Vector3 handIniPos = new Vector3(0.06098f,0.14f,0.20876f); 
+    //Quaternion handIniRot = Quaternion.Euler(309.02655f,349.61621f,283.25412f); 
     // User's hand position (wrist)
     private GameObject userHand; 
     private PinchControl pinchControl;
@@ -52,10 +52,12 @@ public class VRPractice : MonoBehaviour
     private float timeInPosition = 0f; // Variable to counts the time that stays in position
     private GameObject handIni;
     bool inBubbleStage = true;
-    private GameObject platformPrefab;
-    float startTime = 0f;
-    float endTime = 0f;
-    string stage = "";
+    float handPosStartTime = 0.0f;
+    float bubblePopStartTime = 0.0f;
+    float pickAndPlaceStartTime = 0.0f;
+    float rest2bubble;
+    float bubble2plat;
+    //string stage = "";
     string text;
     Vector3 volumePos;
     Vector3 platformPos;
@@ -66,12 +68,14 @@ public class VRPractice : MonoBehaviour
         public string Timestamp { get; set; }
         public string PracticeType { get; set; }
         public int Repetition { get; set; }
-        public string Stage { get; set; }
-        public float StartTime { get; set; }
-        public float EndTime { get; set; }
+        public float HandPosStartTime { get; set; }
+        public float BubblePopStartTime { get; set; }
+        public float PickAndPlaceStartTime { get; set; }
+        public float Rest2Bubble { get; set; }
+        public float Bubble2Plat { get; set; }
         public override string ToString()
         {
-            return $"{Timestamp},{PracticeType},{Repetition},{Stage},{StartTime},{EndTime}";
+            return $"{Timestamp},{PracticeType},{Repetition},{HandPosStartTime},{BubblePopStartTime},{PickAndPlaceStartTime},{Rest2Bubble},{Bubble2Plat}";
         }
     }
     void Awake() 
@@ -105,7 +109,7 @@ public class VRPractice : MonoBehaviour
         // Ensure the file has headers if it's new
         if (!File.Exists(filePath))
         {
-            File.WriteAllText(filePath, "Timestamp, Practice Type, Repetition, Stage, Start Time, End Time\n");
+            File.WriteAllText(filePath, "Timestamp, Practice Type, Repetition, Hand Positioning Start Time, Bubble Popping Start Time, Pick and Place Start Time, Distance Rest to Bubble, Distance Bubble to Platform\n");
         }
 
         // Find the necessary GameObjects
@@ -186,30 +190,22 @@ public class VRPractice : MonoBehaviour
 
         for (int repetition = 0; repetition < nRepetitions; repetition++)
         {
-            startTime = Time.time;
-            stage = "Hand Positioning";
+            handPosStartTime = Time.time;
+            //stage = "Hand Positioning";
 
             yield return StartCoroutine(positionHands());
 
-            endTime = Time.time;
+            bubblePopStartTime = Time.time;
 
-            yield return StartCoroutine(saveData(repetition));
-
-            startTime = Time.time;
-            stage = "Bubble Popping";
+            //stage = "Bubble Popping";
         
             yield return StartCoroutine(bubble());
 
-            endTime = Time.time;
+            pickAndPlaceStartTime = Time.time;
 
-            yield return StartCoroutine(saveData(repetition));
-
-            startTime = Time.time;
-            stage = "Pick and Place";
+            //stage = "Pick and Place";
 
             yield return StartCoroutine(pickNplace());
-
-            endTime = Time.time;
 
             yield return StartCoroutine(saveData(repetition));
 
@@ -254,7 +250,6 @@ public class VRPractice : MonoBehaviour
         //Vector3 newHandIniPos = new Vector3(volumePos.x + (bounds.size.x)/2, volumePos.y + (bounds.size.y)/2, platformPos.z);
         //handIni = Instantiate(Resources.Load<GameObject>("Prefabs/Practice_ref"), volumePos + (bounds.size)/2, handIniRot);
 
-
         handIni = Instantiate(Resources.Load<GameObject>("Prefabs/CCT_ref"), experimentManager.calibratedPos, Quaternion.Euler(experimentManager.calibratedRot));
         handIni.GetComponentInChildren<SkinnedMeshRenderer>().material = (Material)Resources.Load("Materials/Clear", typeof(Material));
 
@@ -296,6 +291,9 @@ public class VRPractice : MonoBehaviour
             UnityEngine.Random.Range(bounds.min.z, bounds.max.z)
         );
 
+        rest2bubble = Vector3.Distance(experimentManager.calibratedPos, spawnPosition);
+        bubble2plat = Vector3.Distance(spawnPosition, platformPos);
+
         // Instantiate the bubble at the random position
         GameObject bubble = Instantiate(bubblePrefab, spawnPosition, Quaternion.identity);
 
@@ -329,6 +327,7 @@ public class VRPractice : MonoBehaviour
         platformCtr.objectInPlatform = false;
     }
 
+
     IEnumerator saveData(int repetition)
     {
         // Create a new trial data object
@@ -337,9 +336,11 @@ public class VRPractice : MonoBehaviour
             Timestamp = System.DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
             PracticeType = practiceType.ToString(),
             Repetition = repetition+1,
-            Stage = stage,
-            StartTime = startTime,
-            EndTime = endTime
+            HandPosStartTime = handPosStartTime,
+            BubblePopStartTime = bubblePopStartTime,
+            PickAndPlaceStartTime = pickAndPlaceStartTime,
+            Rest2Bubble = rest2bubble,
+            Bubble2Plat = bubble2plat
         };
 
         // Write the trial data to the CSV file
