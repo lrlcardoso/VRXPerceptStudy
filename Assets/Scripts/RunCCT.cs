@@ -74,6 +74,7 @@ public class RunCCT : MonoBehaviour
     private Transform userEyes;
 
     // GameObjects to load during the test
+    private GameObject message;
     private GameObject fixationMark;
     private GameObject handRefPos;
     private GameObject stopwatch;
@@ -147,6 +148,7 @@ public class RunCCT : MonoBehaviour
     int nTrials_targetOnly;
     int nTrials_familiarization; 
     int nTrials_noGoFamiliarization;
+    Vector3 messagePos;
 
     // TrialData class to hold each trial's data
     public class TrialData
@@ -199,6 +201,10 @@ public class RunCCT : MonoBehaviour
         stopwatch = Instantiate(Resources.Load<GameObject>("Models/Stopwatch/stopwatch"), Vector3.zero, Quaternion.identity);
         stopwatch.SetActive(false);
         userEyes = GameObject.Find("Rig/Camera Offset/Main Camera").transform;
+
+        message = Instantiate(Resources.Load<GameObject>("Prefabs/Message"));
+        messagePos = new Vector3(0.0f, experimentManager.TableHeight-0.005f, experimentManager.calibratedPos.z);
+        message.transform.position = messagePos;
 
         // Get important data from ExperimentManager
         id = experimentManager.ID;
@@ -451,6 +457,7 @@ public class RunCCT : MonoBehaviour
                     {
                         experimentManager.startCCTflag = false;
                         screenController.SetText("",3);
+                        Destroy(message);
                         Destroy(handRefPos);
                         yield break;
                     }
@@ -929,7 +936,9 @@ public class RunCCT : MonoBehaviour
 
             "If <b><i>both</i></b> tips blink together, <b><i>withhold your response</i></b>.\n\n" +
 
-            "When you are ready, look for a white sphere, fix your gaze on it and say 'YES' loudly to start the test";
+            "When you are ready, look to your right hand and follow the instructions.";
+
+            //"When you are ready, look for a white sphere, fix your gaze on it and say 'YES' loudly to start the test";
         }
         else if (type.ToString() == "H2S")
         {
@@ -941,7 +950,9 @@ public class RunCCT : MonoBehaviour
 
             "If <b><i>both</i></b> tips blink together, <b><i>withhold your response</i></b>.\n\n" +
 
-            "When you are ready, look for a white sphere, fix your gaze on it and say 'YES' loudly to start the test";
+            "When you are ready, look to your right hand and follow the instructions.";
+
+            //"When you are ready, look for a white sphere, fix your gaze on it and say 'YES' loudly to start the test";
         }
         else if (type.ToString() == "None")
         {
