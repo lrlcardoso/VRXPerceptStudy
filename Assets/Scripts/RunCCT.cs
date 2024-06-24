@@ -377,7 +377,7 @@ public class RunCCT : MonoBehaviour
 
             yield return StartCoroutine(saveAndStatus(trial));
         }
-
+         
         if(!(testType.ToString() == "H2H" && test.ToString() == "pre"))
         {
             //experimentManager.nextStage();
@@ -386,6 +386,7 @@ public class RunCCT : MonoBehaviour
         {
             UpdateScreen(testTypeOptions.None);
         }
+
 
         startRecordingFPS = false;
 
