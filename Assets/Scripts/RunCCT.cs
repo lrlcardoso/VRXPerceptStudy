@@ -363,6 +363,7 @@ public class RunCCT : MonoBehaviour
         Destroy(stopwatch?.gameObject);
         Destroy(fixationMark?.gameObject);
         Destroy(handRefPos?.gameObject);
+        Destroy(message?.gameObject);
     }
 
     IEnumerator StepsCCT(PositionRotationCombo[] positionRotationArray, List<int> vector)
@@ -399,6 +400,7 @@ public class RunCCT : MonoBehaviour
         Destroy(stopwatch?.gameObject);
         Destroy(fixationMark?.gameObject);
         Destroy(handRefPos?.gameObject);
+        Destroy(message?.gameObject);
         userHand.SetActive(false);
     }
 

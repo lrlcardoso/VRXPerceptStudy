@@ -7,12 +7,21 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System.IO;
+using System.IO.Ports;
 
 public enum CtrlMode
 {
     None,
     shoulder,
     fingers
+}
+
+public enum Calibration
+{
+    None,
+    calibrate,
+    loadCalibration
 }
 
 public class ExperimentManager : MonoBehaviour
@@ -73,6 +82,8 @@ public class ExperimentManager : MonoBehaviour
     [Header("Experiment Configuration")]
     // Choose the type of control (finger tracking or shoulder movement), which is related to the participant experimental group
     public CtrlMode ControlMode = CtrlMode.None;
+    // Choose to use a calibration done before
+    public Calibration CalibrationMode = Calibration.None;
     // Collect participants ID and save data accordingly
     public string ID = "";
 
@@ -170,6 +181,7 @@ public class ExperimentManager : MonoBehaviour
     private PinchControl pinchControl;
     private ScreenController screenController;
     private GameObject userHand;
+    private string fullFilePath;
 
     void Start()
     {
@@ -189,6 +201,7 @@ public class ExperimentManager : MonoBehaviour
             Debug.Log("Need to specify table height.");
             Application.Quit();
         }
+
         StartCoroutine(Initialization());
 
         screenController = GameObject.Find("Scene/Screen").GetComponent<ScreenController>();
@@ -219,16 +232,96 @@ public class ExperimentManager : MonoBehaviour
 
     IEnumerator WaitToCalibrate()
     {
-        GameObject.Find("Rig/Camera Offset/RightHand").SetActive(false);
-        userHand = GameObject.Find("Rig/Camera Offset/RightHand_CCT");
-        userHand.SetActive(true);
-        
-        while (!Input.GetKeyDown("space")){
-            yield return null;
+        // Define the name of the file that will be saved
+        string fileName = ID + "_HandPositionCalibration.csv";
+
+        // Prepare the file to save data
+        fullFilePath = filePath + @"\" + ID + @"\1_rawDATA";
+        // Ensure the directory exists
+        if (!Directory.Exists(fullFilePath))
+        {
+            Directory.CreateDirectory(fullFilePath);
         }
 
-        getHandPos();
+        // Initialize file path
+        fullFilePath = Path.Combine(fullFilePath, fileName);
+
+        if(CalibrationMode.ToString() == "calibrate")
+        {
+            GameObject.Find("Rig/Camera Offset/RightHand").SetActive(false);
+            userHand = GameObject.Find("Rig/Camera Offset/RightHand_CCT");
+            userHand.SetActive(true);
+
+            while (!Input.GetKeyDown("space")){
+                yield return null;
+            }
+            getHandPos();
+            saveCalibration();
+        }
+        else if(CalibrationMode.ToString() == "loadCalibration")
+        {
+            loadCalibration();
+            yield return null;
+        }
     }
+
+    private void saveCalibration()
+    {
+        string[] lines = {
+            $"{calibratedRot.x},{calibratedRot.y},{calibratedRot.z}",
+            $"{calibratedPos.x},{calibratedPos.y},{calibratedPos.z}"
+        };
+
+        File.WriteAllLines(fullFilePath, lines);
+
+        Debug.Log("Saved Calibration: OK");
+    }
+
+    public void loadCalibration()
+    {
+        if (File.Exists(fullFilePath))
+        {
+            string[] lines = File.ReadAllLines(fullFilePath);
+
+            if (lines.Length >= 2)
+            {
+                string[] rotValues = lines[0].Split(',');
+                string[] posValues = lines[1].Split(',');
+
+                if (rotValues.Length == 3 && posValues.Length == 3)
+                {
+                    calibratedRot = new Vector3(
+                        float.Parse(rotValues[0]),
+                        float.Parse(rotValues[1]),
+                        float.Parse(rotValues[2])
+                    );
+
+                    calibratedPos = new Vector3(
+                        float.Parse(posValues[0]),
+                        float.Parse(posValues[1]),
+                        float.Parse(posValues[2])
+                    );
+
+                    Debug.Log("Loaded Calibration: OK");
+                }
+                else
+                {
+                    Debug.LogWarning("Invalid calibration data.");
+                }
+            }
+            else
+            {
+                Debug.LogWarning("Invalid calibration file format.");
+            }
+        }
+        else
+        {
+            Debug.LogWarning("No calibration data found.");
+        }
+        
+        LoadNextStage();
+    }
+
 
     public void getHandPos()
     {
@@ -240,7 +333,6 @@ public class ExperimentManager : MonoBehaviour
 
         // Output the rotation Euler angles and position
         Debug.Log("Calibration: OK");
-        //Debug.Log(calibratedPos);
     }
 
     public void Recenter()

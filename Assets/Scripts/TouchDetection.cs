@@ -25,7 +25,7 @@ public class TouchDetection : MonoBehaviour
 
     void OnTriggerEnter(Collider other)
     {
-        if(gameObject.name == "R_IndexTip" | gameObject.name == "R_ThumbTip" && other.tag != "VolumeController")
+        if(gameObject.name == "R_IndexTip" | gameObject.name == "R_ThumbTip" && other.tag != "VolumeController" && other.tag != "platform" && other.tag != "TableSurface")
         {
             HapticControl(gameObject.name);
         }
@@ -33,7 +33,7 @@ public class TouchDetection : MonoBehaviour
 
     void OnTriggerExit(Collider other)
     {
-        if(gameObject.name == "R_IndexTip" | gameObject.name == "R_ThumbTip" && other.tag != "VolumeController")
+        if(gameObject.name == "R_IndexTip" | gameObject.name == "R_ThumbTip" && other.tag != "VolumeController" && other.tag != "platform" && other.tag != "TableSurface")
         {
             HapticControl(gameObject.name);
         }

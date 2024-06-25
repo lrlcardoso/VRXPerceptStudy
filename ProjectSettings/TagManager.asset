@@ -10,6 +10,7 @@ TagManager:
   - object2move
   - floor
   - VolumeController
+  - platform
   layers:
   - Default
   - TransparentFX

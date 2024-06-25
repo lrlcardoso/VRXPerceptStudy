@@ -13,7 +13,6 @@ public class GrabManager : MonoBehaviour
     float dist = 0.0f;
     float size = 0.0f;
     float multi = 1.3f;
-    float min_size = 0.019f;
     public bool isGrabbed = false;
 
     
@@ -45,8 +44,9 @@ public class GrabManager : MonoBehaviour
         {
             size = other.gameObject.transform.localScale.x;
             dist = Vector3.Distance(TipRightIndex.transform.position, TipRightThumb.transform.position);
+            //Debug.Log("Size: " + size + " and Distance: " + dist);
 
-            if(dist<(size*multi) && dist>(min_size*multi))
+            if(dist<(size*multi) && dist>(size))
             {
                 if(!isGrabbed)
                 {

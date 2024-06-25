@@ -27,6 +27,7 @@ public class VRPractice : MonoBehaviour
     private GameObject indexSphere; // Reference to the index finger sphere
     private GameObject thumbSphere; // Reference to the thumb sphere
     private GameObject platform;
+    //private GameObject box;
     private GameObject volumeControllerInstance;
     private Collider spawnVolume;
     private Bounds bounds;
@@ -128,6 +129,9 @@ public class VRPractice : MonoBehaviour
         platform.transform.position = platformPos;
         platformCtr = platform.GetComponent<DetectObject>();
 
+        //box = Instantiate(Resources.Load<GameObject>("Prefabs/Box"));
+        //box.transform.position = platformPos;
+
         // Set the volume to randomly spawn the bubbles
         volumeControllerInstance = Instantiate(Resources.Load<GameObject>("Prefabs/VolumeController"));
         volumePos = new Vector3(0.15f, experimentManager.TableHeight-0.005f+0.05f, experimentManager.calibratedPos.z-0.084f);
@@ -218,6 +222,7 @@ public class VRPractice : MonoBehaviour
         EndSound.Play();
         yield return StartCoroutine(ContinueAfterSound());
 
+        //Destroy(box?.gameObject);
         Destroy(platform?.gameObject);
         Destroy(volumeControllerInstance?.gameObject);
         Destroy(handIni?.gameObject);
@@ -236,6 +241,7 @@ public class VRPractice : MonoBehaviour
 
     void OnDestroy()
     {
+        //Destroy(box?.gameObject);
         Destroy(platform?.gameObject);
         Destroy(volumeControllerInstance?.gameObject);
         Destroy(handIni?.gameObject);
