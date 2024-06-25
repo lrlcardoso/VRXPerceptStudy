@@ -114,6 +114,7 @@ public class PinchControl : MonoBehaviour
     // ShoulderData class
     public class ShoulderData
     {
+        public float XX { get; set; }
         public string Timestamp { get; set; }
         public double Microseconds { get; set; } 
         public double Sensor1_Acc_x { get; set; }
@@ -137,7 +138,7 @@ public class PinchControl : MonoBehaviour
 
         public override string ToString()
         {
-            return $"{Timestamp},{Microseconds},{Sensor1_Acc_x},{Sensor1_Acc_y},{Sensor1_Acc_z},{Sensor1_Gyr_x},{Sensor1_Gyr_y},{Sensor1_Gyr_z},{Sensor2_Acc_x},{Sensor2_Acc_y},{Sensor2_Acc_z},{Sensor2_Gyr_x},{Sensor2_Gyr_y},{Sensor2_Gyr_z},{Sensor3_Acc_x},{Sensor3_Acc_y},{Sensor3_Acc_z},{Sensor3_Gyr_x},{Sensor3_Gyr_y},{Sensor3_Gyr_z}";
+            return $"{Timestamp},{Microseconds},{XX},{Sensor1_Acc_x},{Sensor1_Acc_y},{Sensor1_Acc_z},{Sensor1_Gyr_x},{Sensor1_Gyr_y},{Sensor1_Gyr_z},{Sensor2_Acc_x},{Sensor2_Acc_y},{Sensor2_Acc_z},{Sensor2_Gyr_x},{Sensor2_Gyr_y},{Sensor2_Gyr_z},{Sensor3_Acc_x},{Sensor3_Acc_y},{Sensor3_Acc_z},{Sensor3_Gyr_x},{Sensor3_Gyr_y},{Sensor3_Gyr_z}";
         }
     }
 
@@ -204,7 +205,7 @@ public class PinchControl : MonoBehaviour
         // Ensure the file has headers if it's new
         if (!File.Exists(filePath_save))
         {
-            File.WriteAllText(filePath_save, "Timestamp,Acquisition_Time(ms),Sensor1_Acc_x,Sensor1_Acc_y,Sensor1_Acc_z,Sensor1_Gyr_x,Sensor1_Gyr_y,Sensor1_Gyr_z,Sensor2_Acc_x,Sensor2_Acc_y,Sensor2_Acc_z,Sensor2_Gyr_x,Sensor2_Gyr_y,Sensor2_Gyr_z,Sensor3_Acc_x,Sensor3_Acc_y,Sensor3_Acc_z,Sensor3_Gyr_x,Sensor3_Gyr_y,Sensor3_Gyr_z\n");
+            File.WriteAllText(filePath_save, "Timestamp,Acquisition_Time(ms),Animation blend (x),Sensor1_Acc_x,Sensor1_Acc_y,Sensor1_Acc_z,Sensor1_Gyr_x,Sensor1_Gyr_y,Sensor1_Gyr_z,Sensor2_Acc_x,Sensor2_Acc_y,Sensor2_Acc_z,Sensor2_Gyr_x,Sensor2_Gyr_y,Sensor2_Gyr_z,Sensor3_Acc_x,Sensor3_Acc_y,Sensor3_Acc_z,Sensor3_Gyr_x,Sensor3_Gyr_y,Sensor3_Gyr_z\n");
         }
   
 
@@ -376,6 +377,7 @@ public class PinchControl : MonoBehaviour
         {
             Timestamp = System.DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
             Microseconds = (Time.time),
+            XX = x,
             Sensor1_Acc_x = accx_1,
             Sensor1_Acc_y = accy_1,
             Sensor1_Acc_z = accz_1,
