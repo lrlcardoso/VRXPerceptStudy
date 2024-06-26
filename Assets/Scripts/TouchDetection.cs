@@ -14,6 +14,9 @@ public class TouchDetection : MonoBehaviour
     byte[] msg;
     public bool indexON = false;
     public bool thumbON = false;
+    public bool indexContact = false;
+    public bool thumbContact = false;
+    public Collider collided;
 
     // Start is called before the first frame update
     void Start()
@@ -37,6 +40,18 @@ public class TouchDetection : MonoBehaviour
         {
             HapticControl(gameObject.name);
         }
+
+        if(other.gameObject.tag == "object2move")
+        {
+            if(gameObject.name == "R_IndexTip")
+            {
+                indexContact = false;
+            }
+            else if(gameObject.name == "R_ThumbTip")
+            {
+                thumbContact = false;
+            }
+        }  
     }
 
     public void HapticControl(string whatTouched){
@@ -54,5 +69,21 @@ public class TouchDetection : MonoBehaviour
         }
         comPort.Write(msg, 0, msg.Length);
     }  
+
+    void OnTriggerStay(Collider other)
+    {
+        if(other.gameObject.tag == "object2move")
+        {
+            collided = other;
+            if(gameObject.name == "R_IndexTip")
+            {
+                indexContact = true;
+            }
+            else if(gameObject.name == "R_ThumbTip")
+            {
+                thumbContact = true;
+            }
+        }  
+    }
 
 }

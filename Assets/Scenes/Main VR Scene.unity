@@ -3929,8 +3929,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ArduinoPort: COM4
   ControlMode: 2
-  CalibrationMode: 2
-  ID: PXX
+  CalibrationMode: 1
+  ID: PF03
   TableHeight: 0.764
   filePath: 
   nTrials: 0
@@ -4264,6 +4264,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   indexON: 0
   thumbON: 0
+  indexContact: 0
+  thumbContact: 0
+  collided: {fileID: 0}
 --- !u!136 &1811851921
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -4446,6 +4449,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   indexON: 0
   thumbON: 0
+  indexContact: 0
+  thumbContact: 0
+  collided: {fileID: 0}
 --- !u!4 &1913469860 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 3746109035727410820, guid: 993c8995409346c4e84900b440ad1f38,
