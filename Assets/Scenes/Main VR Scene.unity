@@ -3930,8 +3930,8 @@ MonoBehaviour:
   ArduinoPort: COM4
   ControlMode: 2
   CalibrationMode: 1
-  ID: PF03
-  TableHeight: 0.764
+  ID: test
+  TableHeight: 0.776
   filePath: 
   nTrials: 0
   nTrials_noGo: 0
