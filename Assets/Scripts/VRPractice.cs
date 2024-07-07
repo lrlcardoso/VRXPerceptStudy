@@ -228,13 +228,20 @@ public class VRPractice : MonoBehaviour
         Destroy(handIni?.gameObject);
         
         pinchControl.enableUpdate = false;
+        Debug.Log("Stop update");
+
+        // Wait for the end of the frame
+        yield return null;
+
         pinchControl.x = 0.0f;
         userHand.GetComponent<Animator>().SetFloat("Blend", 0.0f);
+        Debug.Log("x and animator = 0");
 
         // Wait for the end of the frame
         yield return null;
 
         userHand.SetActive(false);
+        Debug.Log("unactive");
 
         experimentManager.nextStage();
     }
@@ -245,6 +252,7 @@ public class VRPractice : MonoBehaviour
         Destroy(platform?.gameObject);
         Destroy(volumeControllerInstance?.gameObject);
         Destroy(handIni?.gameObject);
+        
     }
     
 
@@ -265,7 +273,8 @@ public class VRPractice : MonoBehaviour
         // Check if the player is within the detection radius of the target position
         float distanceToTarget = Vector3.Distance(userHand.transform.position, handIni.transform.position);
         
-            if ((distanceToTarget <= detectionRadius) & (pinchControl.x > 0.4f & pinchControl.x < 0.6f))
+            // if ((distanceToTarget <= detectionRadius) & (pinchControl.x > 0.4f & pinchControl.x < 0.6f))
+            if ((distanceToTarget <= detectionRadius) & (pinchControl.x < 0.1f))
             {
                 // If the player is within range, start counting time
                 timeInPosition += Time.deltaTime;

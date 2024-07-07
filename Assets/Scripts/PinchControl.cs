@@ -23,6 +23,8 @@ using System.Net.Sockets;
 using System.Threading;
 using UnityEngine.XR.Hands;
 using System.Diagnostics;
+using System.Net;
+
 
 public class PinchControl : MonoBehaviour
 {
@@ -181,6 +183,11 @@ public class PinchControl : MonoBehaviour
     private static Stopwatch stopwatch = new Stopwatch();
     private static bool isFirstEntry = true;
 
+    private TcpListener tcpListener;
+    private Thread tcpListenerThread;
+    private TcpClient connectedTcpClient;
+    float distance = 0.0f;
+
     void Start()
     {      
         experimentManager = GameObject.Find("Experiment Manager").GetComponent<ExperimentManager>();
@@ -189,10 +196,8 @@ public class PinchControl : MonoBehaviour
         id = experimentManager.ID;
         fileName = id + "_ShoulderMov.csv";
 
-
         // Prepare the file to save data
         filePath_save = experimentManager.filePath + @"\" + id + @"\1_rawDATA";
-
 
         // Ensure the directory exists
         if (!Directory.Exists(filePath_save))
@@ -214,31 +219,35 @@ public class PinchControl : MonoBehaviour
         
         if(experimentManager.ControlMode.ToString()=="shoulder")
         {
-            filePath_load = experimentManager.filePath + @"\" + id + @"\0_calibrationMatrices\";
+            tcpListenerThread = new Thread(new ThreadStart(ListenPython));
+            tcpListenerThread.IsBackground = true;
+            tcpListenerThread.Start();
 
-            try{
-                // READ ALL MATRIX FOR THE KALMAN FILTER
-                // read matrix A
-                A = MatLoad(filePath_load+"A.txt",',');
-                // read matrix H
-                H = MatLoad(filePath_load+"H.txt",',');
-                // read matrix Q
-                Q = MatLoad(filePath_load+"Q.txt",',');
-                // read matrix W
-                W = MatLoad(filePath_load+"W.txt",',');
-                // read matrix A_t (A transpost)
-                A_t = MatLoad(filePath_load+"A_t.txt",',');
-                // read matrix H_t (H transpost)
-                H_t = MatLoad(filePath_load+"H_t.txt",',');
-            }
-            catch (Exception)
-            {
-                UnityEngine.Debug.LogError("The folder was not well specified.");
-                return;
-            }
+            // filePath_load = experimentManager.filePath + @"\" + id + @"\0_calibrationMatrices\";
 
-            //Create a identity matrix to be used in the last step of the system identification
-            I = MatEye(ECov_posteriori.Length,ECov_posteriori[0].Length);
+            // try{
+            //     // READ ALL MATRIX FOR THE KALMAN FILTER
+            //     // read matrix A
+            //     A = MatLoad(filePath_load+"A.txt",',');
+            //     // read matrix H
+            //     H = MatLoad(filePath_load+"H.txt",',');
+            //     // read matrix Q
+            //     Q = MatLoad(filePath_load+"Q.txt",',');
+            //     // read matrix W
+            //     W = MatLoad(filePath_load+"W.txt",',');
+            //     // read matrix A_t (A transpost)
+            //     A_t = MatLoad(filePath_load+"A_t.txt",',');
+            //     // read matrix H_t (H transpost)
+            //     H_t = MatLoad(filePath_load+"H_t.txt",',');
+            // }
+            // catch (Exception)
+            // {
+            //     UnityEngine.Debug.LogError("The folder was not well specified.");
+            //     return;
+            // }
+
+            // //Create a identity matrix to be used in the last step of the system identification
+            // I = MatEye(ECov_posteriori.Length,ECov_posteriori[0].Length);
 
         }
         else if(experimentManager.ControlMode.ToString()=="None")
@@ -293,15 +302,43 @@ public class PinchControl : MonoBehaviour
             }
             else if(experimentManager.ControlMode.ToString()=="shoulder")
             {
-                // update x value according to the shoulder position
-                X = shoulderElevation();
-                //UnityEngine.Debug.Log(X[0][0] + ", " + X[1][0]);
-                //x = (Convert.ToSingle(X[0][0])-0.1f)*1.2f;
-                x = Convert.ToSingle(X[0][0])-0.15f;
-
-                //UnityEngine.Debug.Log(x);
+                // // update x value according to the shoulder position
+                // X = shoulderElevation();
+                // x = Convert.ToSingle(X[0][0]);
+                x = distance;
             }
             
+        }
+    }
+
+    private void ListenPython()
+    {
+        try
+        {
+            tcpListener = new TcpListener(IPAddress.Any, 8052);
+            tcpListener.Start();
+            UnityEngine.Debug.Log("Python comunication setup: OK");
+
+            while (true)
+            {
+                using (connectedTcpClient = tcpListener.AcceptTcpClient())
+                {
+                    NetworkStream stream = connectedTcpClient.GetStream();
+                    byte[] buffer = new byte[1024];
+                    int bytesRead;
+
+                    while ((bytesRead = stream.Read(buffer, 0, buffer.Length)) != 0)
+                    {
+                        var data = Encoding.ASCII.GetString(buffer, 0, bytesRead);
+
+                        float.TryParse(data, out distance);
+                    }
+                }
+            }
+        }
+        catch (SocketException socketException)
+        {
+            UnityEngine.Debug.Log("SocketException " + socketException.ToString());
         }
     }
 
@@ -431,7 +468,7 @@ public class PinchControl : MonoBehaviour
 
     private void setupDelsys() 
     {
-        UnityEngine.Debug.Log("Delsys setup is running...");
+        //UnityEngine.Debug.Log("Delsys setup is running...");
         try
         {
             //Establish TCP/IP connection to server using URL entered
@@ -514,6 +551,10 @@ public class PinchControl : MonoBehaviour
             //UnityEngine.Debug.Log("COMMAND: " + COMMAND_STOP);
             //UnityEngine.Debug.Log("RESPONSE: " + response);
             commandSocket.Close();
+            if (tcpListener != null)
+            {
+                tcpListener.Stop();
+            }
         //}
     } 
 
