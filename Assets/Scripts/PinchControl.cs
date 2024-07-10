@@ -306,7 +306,7 @@ public class PinchControl : MonoBehaviour
                 // X = shoulderElevation();
                 // x = Convert.ToSingle(X[0][0]);
                 x = distance;
-                UnityEngine.Debug.Log(x);
+                //UnityEngine.Debug.Log(x);
             }
             
         }
