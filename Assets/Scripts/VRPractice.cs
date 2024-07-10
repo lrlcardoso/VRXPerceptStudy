@@ -228,20 +228,17 @@ public class VRPractice : MonoBehaviour
         Destroy(handIni?.gameObject);
         
         pinchControl.enableUpdate = false;
-        Debug.Log("Stop update");
 
         // Wait for the end of the frame
         yield return null;
 
         pinchControl.x = 0.0f;
         userHand.GetComponent<Animator>().SetFloat("Blend", 0.0f);
-        Debug.Log("x and animator = 0");
 
         // Wait for the end of the frame
         yield return null;
 
         userHand.SetActive(false);
-        Debug.Log("unactive");
 
         experimentManager.nextStage();
     }

@@ -306,6 +306,7 @@ public class PinchControl : MonoBehaviour
                 // X = shoulderElevation();
                 // x = Convert.ToSingle(X[0][0]);
                 x = distance;
+                UnityEngine.Debug.Log(x);
             }
             
         }
@@ -315,7 +316,8 @@ public class PinchControl : MonoBehaviour
     {
         try
         {
-            tcpListener = new TcpListener(IPAddress.Any, 8052);
+            tcpListener = new TcpListener(IPAddress.Parse("192.168.1.2"), 8052);
+            // tcpListener = new TcpListener(IPAddress.Any, 8052);
             tcpListener.Start();
             UnityEngine.Debug.Log("Python comunication setup: OK");
 

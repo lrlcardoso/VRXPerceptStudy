@@ -222,9 +222,9 @@ public class ExperimentManager : MonoBehaviour
     IEnumerator WaitToRecenter()
     {
         pinchControl = GameObject.Find("Rig/Camera Offset/RightHand").GetComponent<PinchControl>();
-        while (!pinchControl.delsysReady){
-            yield return null;
-        }
+        // while (!pinchControl.delsysReady){
+        //     yield return null;
+        // }
         yield return new WaitForSeconds(3f);
 
         Recenter();
