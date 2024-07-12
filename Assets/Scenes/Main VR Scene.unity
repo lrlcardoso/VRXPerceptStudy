@@ -4146,7 +4146,7 @@ MonoBehaviour:
   ControlMode: 1
   CalibrationMode: 1
   ID: PS04
-  TableHeight: 0.789
+  TableHeight: 0.813
   filePath: 
   nTrials: 0
   nTrials_noGo: 0
