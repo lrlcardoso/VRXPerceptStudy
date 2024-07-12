@@ -4145,7 +4145,7 @@ MonoBehaviour:
   ArduinoPort: COM4
   ControlMode: 1
   CalibrationMode: 1
-  ID: test
+  ID: PS04
   TableHeight: 0.789
   filePath: 
   nTrials: 0
