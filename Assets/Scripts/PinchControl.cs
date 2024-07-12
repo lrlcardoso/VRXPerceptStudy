@@ -186,6 +186,10 @@ public class PinchControl : MonoBehaviour
     private TcpListener tcpListener;
     private Thread tcpListenerThread;
     private TcpClient connectedTcpClient;
+
+    // Variables to store calibration values
+    private float calibration_max;
+    private float calibration_min;
     float distance = 0.0f;
 
     void Start()
@@ -223,9 +227,41 @@ public class PinchControl : MonoBehaviour
             tcpListenerThread.IsBackground = true;
             tcpListenerThread.Start();
 
-            // filePath_load = experimentManager.filePath + @"\" + id + @"\0_calibrationMatrices\";
+            filePath_load = experimentManager.filePath + @"\" + id + @"\0_calibrationMatrices\";
 
-            // try{
+            try{
+                // Read the file
+                using (StreamReader reader = new StreamReader(filePath_load + id + "_ShoulderCalibration.csv"))
+                {
+                    string line;
+                    while ((line = reader.ReadLine()) != null)
+                    {
+                        // Split the line by comma
+                        string[] values = line.Split(',');
+
+                        // Check if the line has at least two values
+                        if (values.Length >= 2)
+                        {
+                            // Trim spaces
+                            string variableName = values[0].Trim();
+                            string variableValue = values[1].Trim();
+
+                            // Check if the variableName matches what you're looking for
+                            if (variableName == "Calibration Max")
+                            {
+                                // Parse the value to float
+                                calibration_max = float.Parse(variableValue);
+                                UnityEngine.Debug.Log("calibration_max: " + calibration_max);
+                            }
+                            else if (variableName == "Calibration Min")
+                            {
+                                // Parse the value to float
+                                calibration_min = float.Parse(variableValue);
+                                UnityEngine.Debug.Log("calibration_min: " + calibration_min);
+                            }
+                        }
+                    }
+                }
             //     // READ ALL MATRIX FOR THE KALMAN FILTER
             //     // read matrix A
             //     A = MatLoad(filePath_load+"A.txt",',');
@@ -239,12 +275,12 @@ public class PinchControl : MonoBehaviour
             //     A_t = MatLoad(filePath_load+"A_t.txt",',');
             //     // read matrix H_t (H transpost)
             //     H_t = MatLoad(filePath_load+"H_t.txt",',');
-            // }
-            // catch (Exception)
-            // {
-            //     UnityEngine.Debug.LogError("The folder was not well specified.");
-            //     return;
-            // }
+            }
+            catch (Exception)
+            {
+                 UnityEngine.Debug.LogError("The folder was not well specified.");
+                 return;
+            }
 
             // //Create a identity matrix to be used in the last step of the system identification
             // I = MatEye(ECov_posteriori.Length,ECov_posteriori[0].Length);
@@ -305,7 +341,8 @@ public class PinchControl : MonoBehaviour
                 // // update x value according to the shoulder position
                 // X = shoulderElevation();
                 // x = Convert.ToSingle(X[0][0]);
-                x = distance;
+                // x = distance;
+                x = (distance - calibration_min) / (calibration_max - calibration_min);
                 //UnityEngine.Debug.Log(x);
             }
             
