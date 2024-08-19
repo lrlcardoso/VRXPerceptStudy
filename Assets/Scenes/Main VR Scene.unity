@@ -534,7 +534,7 @@ MonoBehaviour:
   m_Camera: {fileID: 56995903}
   m_OriginBaseGameObject: {fileID: 147388992}
   m_CameraFloorOffsetObject: {fileID: 1900000584}
-  m_RequestedTrackingOriginMode: 0
+  m_RequestedTrackingOriginMode: 2
   m_CameraYOffset: 1.1
 --- !u!4 &147388995
 Transform:
@@ -4144,8 +4144,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ArduinoPort: COM4
   ControlMode: 2
-  CalibrationMode: 1
-  ID: PF09
+  CalibrationMode: 2
+  ID: test
   TableHeight: 0.785
   filePath: 
   nTrials: 0
