@@ -4146,7 +4146,7 @@ MonoBehaviour:
   ControlMode: 2
   CalibrationMode: 2
   ID: test
-  TableHeight: 0.785
+  TableHeight: 0.787
   filePath: 
   nTrials: 0
   nTrials_noGo: 0

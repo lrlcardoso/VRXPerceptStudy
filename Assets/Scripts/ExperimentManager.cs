@@ -185,10 +185,7 @@ public class ExperimentManager : MonoBehaviour
 
     void Start()
     {
-        head = GameObject.Find("Rig/Camera Offset/Main Camera").transform;
-        origin = GameObject.Find("Rig").transform;
-        target = GameObject.Find("Scene/Recenter Position").transform;
-
+        
         table = GameObject.Find("Scene/Table");
         if(TableHeight!=0.0f)
         {
@@ -337,9 +334,12 @@ public class ExperimentManager : MonoBehaviour
 
     public void Recenter()
     {
-        Vector3 offset = head.position - origin.position;
-        offset.y = 0;
-        origin.position = target.position - offset;
+
+        head = GameObject.Find("Rig/Camera Offset/Main Camera").transform;
+        origin = GameObject.Find("Rig").transform;
+        target = GameObject.Find("Scene/Recenter Position").transform;
+
+        origin.position = new Vector3(-head.position.x+target.position.x, -head.position.y+TableHeight+0.04f, -head.position.z+target.position.z);
 
         Vector3 targetForward = target.forward;
         targetForward.y = 0;
