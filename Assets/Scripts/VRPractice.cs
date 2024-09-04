@@ -270,8 +270,8 @@ public class VRPractice : MonoBehaviour
         // Check if the player is within the detection radius of the target position
         float distanceToTarget = Vector3.Distance(userHand.transform.position, handIni.transform.position);
         
-            // if ((distanceToTarget <= detectionRadius) & (pinchControl.x > 0.4f & pinchControl.x < 0.6f))
-            if ((distanceToTarget <= detectionRadius) & (pinchControl.x < 0.1f))
+            if ((distanceToTarget <= detectionRadius) & (pinchControl.x > 0.4f & pinchControl.x < 0.6f))
+            //if ((distanceToTarget <= detectionRadius) & (pinchControl.x < 0.1f))
             {
                 // If the player is within range, start counting time
                 timeInPosition += Time.deltaTime;
